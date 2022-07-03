@@ -3,8 +3,7 @@
 
 #include <vector>
 
-using Scalar = double;
-
+template <typename Scalar>
 class Geometry {
     public:
         // BINARY HEADER FORMAT:

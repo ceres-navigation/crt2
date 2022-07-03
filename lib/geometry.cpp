@@ -17,11 +17,11 @@
 
 #include "geometry.hpp"
 
-using Scalar = double;
+template <typename Scalar>
+Geometry<Scalar>::Geometry(){};
 
-Geometry::Geometry(){};
-
-void Geometry::read_obj(const char* file_path){
+template <typename Scalar>
+void Geometry<Scalar>::read_obj(const char* file_path){
     this->vertices.clear();
     this->faces.clear();
 
@@ -77,7 +77,8 @@ void Geometry::read_obj(const char* file_path){
     }
 };
 
-void Geometry::read_binary(const char* file_path){
+template <typename Scalar>
+void Geometry<Scalar>::read_binary(const char* file_path){
     this->vertices.clear();
     this->faces.clear();
 
@@ -147,7 +148,8 @@ void Geometry::read_binary(const char* file_path){
     delete [] f_array;
 };
 
-void Geometry::write_binary(const char* file_path){
+template <typename Scalar>
+void Geometry<Scalar>::write_binary(const char* file_path){
     uint32_t num_v = this->vertices.size();
     uint32_t num_f = this->faces.size();
 
@@ -209,3 +211,7 @@ void Geometry::write_binary(const char* file_path){
     delete [] compressed_v;
     delete [] compressed_f;
 };
+
+// Explicitly Instantiate floats and doubles:
+template class Geometry<float>;
+template class Geometry<double>;

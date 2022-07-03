@@ -140,12 +140,16 @@ int main(int argc, char** argv)
 
     if (is_file){
         auto start = std::chrono::system_clock::now();
-        Geometry geometry;
-
-        geometry.read_obj(input.c_str());
-        
-        geometry.write_binary(output.c_str());
-
+        if (use_doubles){
+            Geometry<double> geometry;
+            geometry.read_obj(input.c_str());
+            geometry.write_binary(output.c_str());
+        }
+        else{
+            Geometry<float> geometry;
+            geometry.read_obj(input.c_str());
+            geometry.write_binary(output.c_str());
+        }
         auto end = std::chrono::system_clock::now();
         std::chrono::duration<double> elapsed_seconds = end - start;
         std::cout << input << " compressed and written to " << output << " in " << elapsed_seconds.count() << " seconds\n";
@@ -163,12 +167,7 @@ int main(int argc, char** argv)
             tbb::parallel_for(tbb::blocked_range<int>(0, input_files.size()), [&](tbb::blocked_range<int> r){
                 for (int i = r.begin(); i<r.end(); ++i){
                     auto start = std::chrono::system_clock::now();
-                    Geometry geometry;
-
                     auto path = input_files[i];
-
-                    // Read the current .OBJ file:
-                    geometry.read_obj(path.c_str());
 
                     // Create the file name for the binary file:
                     auto filename = path.stem().string();
@@ -176,9 +175,17 @@ int main(int argc, char** argv)
                     std::filesystem::path output_filename = output.c_str();
                     output_filename /= filename;
 
-                    // Convert to compressed binary and write to file:
-                    geometry.write_binary(output_filename.c_str());
-                        
+                    if (use_doubles){
+                        Geometry<double> geometry;
+                        geometry.read_obj(path.c_str());
+                        geometry.write_binary(output_filename.c_str());
+                    }
+                    else {
+                        Geometry<float> geometry;
+                        geometry.read_obj(path.c_str());
+                        geometry.write_binary(output_filename.c_str());
+                    }
+
                     auto end = std::chrono::system_clock::now();
                     std::chrono::duration<double> elapsed_seconds = end - start;
                     std::cout << path.c_str() << " compressed and written to " << output_filename.c_str() << " in " << elapsed_seconds.count() << " seconds\n";
@@ -189,10 +196,6 @@ int main(int argc, char** argv)
             for (auto &p : std::filesystem::recursive_directory_iterator(input.c_str())) {
                 if (p.path().extension() == extension){
                     auto start = std::chrono::system_clock::now();
-                    Geometry geometry;
-
-                    // Read the current .OBJ file:
-                    geometry.read_obj(p.path().c_str());
 
                     // Create the file name for the binary file:
                     auto filename = p.path().stem().string();
@@ -200,8 +203,17 @@ int main(int argc, char** argv)
                     std::filesystem::path output_filename = output.c_str();
                     output_filename /= filename;
 
-                    // Convert to compressed binary and write to file:
-                    geometry.write_binary(output_filename.c_str());
+                    if (use_doubles){
+                        Geometry<double> geometry;
+                        geometry.read_obj(p.path().c_str());
+                        geometry.write_binary(output_filename.c_str());
+                    }
+                    else {
+                        Geometry<float> geometry;
+                        geometry.read_obj(p.path().c_str());
+                        geometry.write_binary(output_filename.c_str());
+                    }
+
 
                     auto end = std::chrono::system_clock::now();
                     std::chrono::duration<double> elapsed_seconds = end - start;
