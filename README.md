@@ -10,7 +10,7 @@
 First clone the repository with all submodules:
 
 ```
-git clone --recurse-submodules -j8
+git clone --recurse-submodules -j8 git@github.com:ceres-navigation/crt2.git
 ```
 
 Run the setup script (to configure third party libraries):
@@ -18,6 +18,7 @@ Run the setup script (to configure third party libraries):
 ```
 ./setup.sh
 ```
+*NOTE: If `setup.sh` is not executable, simply run `chmod +x setup.sh` and try again.
 
 To build the project simply run from the repository root directory:
 
