@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Setup python:
+sudo apt-get install python3-dev -y
+
 cd external
 
 # Setup prebuild zstd library:
@@ -21,3 +24,4 @@ cmake -DCMAKE_INSTALL_PREFIX=../prefix -DTBB_TEST=OFF ..
 cmake --build .
 cmake --install .
 cd ../../
+

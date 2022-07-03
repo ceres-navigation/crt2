@@ -99,7 +99,7 @@ void Geometry<Scalar>::read_binary(const char* file_path){
     fread(&num_f, sizeof(uint32_t), 1, file);
 
     // TODO: DEBUG WHY THIS DOESNT WORK:
-    for (size_t i = 0; i < magic_length; i++){
+    for (int i = 0; i < magic_length; i++){
         assert(magic_return[i] == magic[i]);
     }
 
