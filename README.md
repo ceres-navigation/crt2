@@ -28,6 +28,3 @@ cd build
 cmake ..
 make -j
 ```
-
-This will produce the following executables:
-- `convert_obj`: This will convert a .OBJ file from ASCII format to the ray tracer's compressed binary format for faster loading.  Use as: `./convert_obj <path to .obj> <output path>`

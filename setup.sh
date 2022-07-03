@@ -1,11 +1,23 @@
 #!/bin/bash
 
+cd external
+
 # Setup prebuild zstd library:
-cd external/zstd
+cd zstd
 mkdir -p prefix
 cd build/cmake
 mkdir -p build
 cd build
-cd cmake ..
 cmake -DCMAKE_INSTALL_PREFIX=../../../prefix ..
 make install -j
+cd ../../../../
+
+# Setup oneTBB library:
+cd oneTBB
+mkdir -p prefix
+mkdir -p build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=../prefix -DTBB_TEST=OFF ..
+cmake --build .
+cmake --install .
+cd ../../

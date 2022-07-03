@@ -5,8 +5,8 @@ project(rt CXX)
 set(CMAKE_CXX_STANDARD 17)
 
 # Uncomment these lines to compile for debugging:
-# set(CMAKE_BUILD_TYPE Debug)
-# set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)

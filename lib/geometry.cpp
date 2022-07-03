@@ -12,8 +12,6 @@
 #include <vector>
 #include <random>
 
-#include <chrono>
-
 #include <zstd.h>
 #include <tiny_obj_loader.h>
 
@@ -27,8 +25,6 @@ void Geometry::read_obj(const char* file_path){
     this->vertices.clear();
     this->faces.clear();
 
-    std::cout << "Reading OBJ file from " << file_path << "\n";
-    auto start = std::chrono::system_clock::now();
     tinyobj::ObjReader reader;
     tinyobj::ObjReaderConfig reader_config;
 
@@ -79,18 +75,11 @@ void Geometry::read_obj(const char* file_path){
             shapes[s].mesh.material_ids[f];
         }
     }
-
-    auto end = std::chrono::system_clock::now();
-    std::chrono::duration<double> elapsed_seconds = end - start;
-    std::cout << "    DONE: " << vertices.size() << " vertices and " << faces.size() << " faces read in " << elapsed_seconds.count() << " seconds\n";
 };
 
 void Geometry::read_binary(const char* file_path){
     this->vertices.clear();
     this->faces.clear();
-
-    std::cout << "Reading geometry from " << file_path << "\n";
-    auto start = std::chrono::system_clock::now();
 
     char magic_return[magic_length];
     uint32_t compressed_v_size;
@@ -156,16 +145,9 @@ void Geometry::read_binary(const char* file_path){
     delete [] v_array;
     delete [] f_compressed;
     delete [] f_array;
-
-    auto end = std::chrono::system_clock::now();
-    std::chrono::duration<double> elapsed_seconds = end - start;
-    std::cout << "    DONE: " << num_v << " vertices and " << num_f << " faces read in " << elapsed_seconds.count() << " seconds\n";
 };
 
 void Geometry::write_binary(const char* file_path){
-    std::cout << "Writing geometry to " << file_path << "\n";
-    auto start = std::chrono::system_clock::now();
-
     uint32_t num_v = this->vertices.size();
     uint32_t num_f = this->faces.size();
 
@@ -226,8 +208,4 @@ void Geometry::write_binary(const char* file_path){
     delete [] f_array;
     delete [] compressed_v;
     delete [] compressed_f;
-    
-    auto end = std::chrono::system_clock::now();
-    std::chrono::duration<double> elapsed_seconds = end - start;
-    std::cout << "    DONE: " << num_v << " vertices and " << num_f << " faces written in " << elapsed_seconds.count() << " seconds\n";
 };
