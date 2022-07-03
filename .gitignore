@@ -12,6 +12,7 @@
 *.jpg
 
 # Build ignores
+data/
 build/
 doc/build/
 *.html

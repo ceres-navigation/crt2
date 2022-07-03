@@ -1,16 +1,32 @@
-# Setup ZSTD Dependency:
-In a directory above this one (so that you will have `zstd/` and `crt2/` in the same directory) run:
+# The Ray Tracer formerly known as CERES
+
+## File Structure Description:
+- `external/`: Collection of external third-party libraries used (but unedited) but this project
+- `include/`: Public interface for the library (`.hpp`)
+- `lib/`: Source for the ray tracer library.  Contains both implementation (`.cpp`) and private headers (`.hpp`)
+- `src/`: Source for the application.  Contains both implementation (`.cpp`) and private headers (`.hpp`)
+
+## Installation (Linux):
+First clone the repository with all submodules:
+
 ```
-git clone https://github.com/facebook/zstd.git
+git clone --recurse-submodules -j8
+```
 
-cd zstd
-mkdir prefix
+Run the setup script (to configure third party libraries):
 
-cd build/cmake
+```
+./setup.sh
+```
+
+To build the project simply run from the repository root directory:
+
+```
 mkdir build
 cd build
-cd cmake ..
-make
-
-cmake -DCMAKE_INSTALL_PREFIX=../../../prefix ..
+cmake ..
+make -j
 ```
+
+This will produce the following executables:
+- `convert_obj`: This will convert a .OBJ file from ASCII format to the ray tracer's compressed binary format for faster loading.  Use as: `./convert_obj <path to .obj> <output path>`
