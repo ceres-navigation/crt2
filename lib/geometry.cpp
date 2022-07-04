@@ -78,6 +78,30 @@ void Geometry<Scalar>::read_obj(const char* file_path){
 };
 
 template <typename Scalar>
+Triangle<Scalar>* Geometry<Scalar>::triangles(uint32_t &num_triangles){
+    // Get the number of triangles:
+    num_triangles = this->faces.size();
+
+    // Allocate triangles on heap:
+    Triangle<Scalar>* triangles = new Triangle<Scalar>[num_triangles];
+
+    // Populate triangles with the data read in from a file:
+    for (uint32_t i = 0; i < num_triangles; i++){
+        auto face_def = this->faces[i];
+
+        auto v0 = Vector3<Scalar>(this->vertices[face_def[0]][0], this->vertices[face_def[0]][1], this->vertices[face_def[0]][2]);
+        auto v1 = Vector3<Scalar>(this->vertices[face_def[1]][0], this->vertices[face_def[1]][1], this->vertices[face_def[1]][2]);
+        auto v2 = Vector3<Scalar>(this->vertices[face_def[2]][0], this->vertices[face_def[2]][1], this->vertices[face_def[2]][2]);
+
+        triangles[i].vertex0 = v0;
+        triangles[i].vertex1 = v1;
+        triangles[i].vertex2 = v2;
+    }
+
+    return triangles;
+};
+
+template <typename Scalar>
 void Geometry<Scalar>::read_binary(const char* file_path){
     this->vertices.clear();
     this->faces.clear();

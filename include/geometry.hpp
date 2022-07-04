@@ -2,6 +2,8 @@
 #define __GEOMETRY_H_
 
 #include <vector>
+#include "primitives/triangle.hpp"
+#include <stdint.h>
 
 template <typename Scalar>
 class Geometry {
@@ -20,6 +22,8 @@ class Geometry {
         Geometry();
 
         void read_obj(const char* file_path);
+
+        Triangle<Scalar>* triangles(uint32_t &num_triangles);
 
         void read_binary(const char* file_path);
 

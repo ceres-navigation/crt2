@@ -11,6 +11,8 @@
 
 #include "primitives/triangle.hpp"
 
+#include "geometry.hpp"
+
 #include <iostream>
 
 // TODO: Make this configurable:
@@ -73,21 +75,27 @@ int main(){
     // Define a simple light:
     PointLight<Scalar> light(1);
 
-    // Define some random triangles:
-    uint32_t num_triangles = 100;
-    auto triangles = new Triangle<Scalar>[num_triangles];
+    // // Define some random triangles:
+    // uint32_t num_triangles = 100;
+    // auto triangles = new Triangle<Scalar>[num_triangles];
 
-    // Setup random number generator:
-    std::random_device dev;
-    std::default_random_engine rng;
-    std::uniform_real_distribution<double> dist(-1.0,1.0);
+    // // Setup random number generator:
+    // std::random_device dev;
+    // std::default_random_engine rng;
+    // std::uniform_real_distribution<double> dist(-1.0,1.0);
 
-    for (uint32_t i = 0; i < num_triangles; i++){
-        auto translation = Vector3<Scalar>(10*dist(rng),10*dist(rng),0);
-        triangles[i].vertex0 = Vector3<Scalar>(dist(rng),dist(rng),dist(rng)) + translation;
-        triangles[i].vertex1 = Vector3<Scalar>(dist(rng),dist(rng),dist(rng)) + translation;
-        triangles[i].vertex2 = Vector3<Scalar>(dist(rng),dist(rng),dist(rng)) + translation;
-    }
+    // for (uint32_t i = 0; i < num_triangles; i++){
+    //     auto translation = Vector3<Scalar>(10*dist(rng),10*dist(rng),0);
+    //     triangles[i].vertex0 = Vector3<Scalar>(dist(rng),dist(rng),dist(rng)) + translation;
+    //     triangles[i].vertex1 = Vector3<Scalar>(dist(rng),dist(rng),dist(rng)) + translation;
+    //     triangles[i].vertex2 = Vector3<Scalar>(dist(rng),dist(rng),dist(rng)) + translation;
+    // }
+
+    // Load triangles from sample .OBJ file:
+    uint32_t num_triangles = 0;
+    Geometry<Scalar> geometry;
+    geometry.read_obj("../suzanne.obj");
+    Triangle<Scalar>* triangles = geometry.triangles(num_triangles);
 
     // Ray trace:
     render(camera, light, triangles, num_triangles);
