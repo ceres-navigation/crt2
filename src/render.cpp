@@ -16,14 +16,22 @@
 // TODO: Make this configurable:
 using Scalar = double;
 
+
+#include <random> // Needed for generating random numbers
+
+#include <fstream> // Needed for writing ppm image
+
+// Helper function to print vector3 (if needed):
 void print_vector(Vector3<Scalar> v){
     std::cout << "[" << v[0] << ", " << v[1] << ", " << v[2] << "]\n";
 }
 
-void render(Camera<Scalar> &camera, Light<Scalar> &light, Triangle<Scalar> triangles[1000]){
+void render(Camera<Scalar> &camera, Light<Scalar> &light, Triangle<Scalar> *triangles, uint32_t num_triangles){
     //Simple ray tracing:
     auto res_h = camera.sensor->get_resolution_h();
     auto res_v = camera.sensor->get_resolution_v();
+
+    uint8_t  image[(int) res_h][(int) res_v] = {0};
 
     // Loop through all pixels:
     for (int u = 0; u < res_h; u++){
@@ -33,35 +41,28 @@ void render(Camera<Scalar> &camera, Light<Scalar> &light, Triangle<Scalar> trian
             Ray<Scalar> ray = camera.pixel_to_ray(u,v);
 
             // Trace ray against all triangles:
-            for (int i = 0; i < 1000; i++){
+            for (uint32_t i = 0; i < num_triangles; i++){
                 intersect_triangle<Scalar>(ray, triangles[i]);
             }
 
-            std::cout << "Ray Origin: ";
-            print_vector(ray.origin);
-            std::cout << "Ray Direction: ";
-            print_vector(ray.direction);
-            std::cout << "Triangle v0: ";
-            print_vector(triangles[0].vertex0);
-            std::cout << "Triangle v1: ";
-            print_vector(triangles[0].vertex1);
-            std::cout << "Triangle v2: ";
-            print_vector(triangles[0].vertex2);
-
-            std::cout << ray.hit.t << "\n";
-
-            std::cout << (ray.hit.t != std::numeric_limits<Scalar>::max()) << "\n";
-            
             // Format an output image:
-
+            if (ray.hit.t < std::numeric_limits<Scalar>::max()) {
+                image[u][v] = 255;
+            }
         }
     }
-}
 
+    // Write image to file:
+    std::string filename = "frame.ppm";
+    std::ofstream ppm(filename, std::ios::binary);
+    ppm << "P5\n" << res_h << ' ' << res_v << "\n255\n";
+    ppm.write(reinterpret_cast<char *>(image), res_h * res_v * sizeof(uint8_t));
+    ppm.flush();
+}
 
 int main(){
     // Define sensor:
-    Scalar resolution[2] = {1,1};
+    Scalar resolution[2] = {1000,1000};
     Scalar size[2] = {30,30};
     SimpleSensor<Scalar> sensor(resolution, size);
 
@@ -69,20 +70,30 @@ int main(){
     SimpleCamera<Scalar> camera(30, sensor, true);
     camera.set_position(0,0,-18);
 
-    std::cout << camera.center[0] << ", " << camera.center[1] << "\n";
-
     // Define a simple light:
     PointLight<Scalar> light(1);
 
     // Define some random triangles:
-    Triangle<Scalar> triangles[1000];
-    for (int i = 0; i < 1000; i++){
-        triangles[i].vertex0 = Vector3<Scalar>(-5,-5,0);
-        triangles[i].vertex1 = Vector3<Scalar>(0,5,0);
-        triangles[i].vertex2 = Vector3<Scalar>(5,-5,0);
+    uint32_t num_triangles = 100;
+    auto triangles = new Triangle<Scalar>[num_triangles];
+
+    // Setup random number generator:
+    std::random_device dev;
+    std::default_random_engine rng;
+    std::uniform_real_distribution<double> dist(-1.0,1.0);
+
+    for (uint32_t i = 0; i < num_triangles; i++){
+        auto translation = Vector3<Scalar>(10*dist(rng),10*dist(rng),0);
+        triangles[i].vertex0 = Vector3<Scalar>(dist(rng),dist(rng),dist(rng)) + translation;
+        triangles[i].vertex1 = Vector3<Scalar>(dist(rng),dist(rng),dist(rng)) + translation;
+        triangles[i].vertex2 = Vector3<Scalar>(dist(rng),dist(rng),dist(rng)) + translation;
     }
 
     // Ray trace:
-    render(camera, light, triangles);
+    render(camera, light, triangles, num_triangles);
+    
+    // Heap allocation requires deletion when finished:
+    delete [] triangles;
+
     return 0;
 }
