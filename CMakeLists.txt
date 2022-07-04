@@ -21,7 +21,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-math-errno -fno-signed-zeros -fno-trapping
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 include_directories(include)
-include_directories(include/sensors)
+
 include_directories(external/tinyobjloader)
 include_directories(external/zstd/lib)
 include_directories(external/oneTBB/include)

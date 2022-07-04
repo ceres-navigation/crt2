@@ -21,6 +21,8 @@ class RigidBody {
 
         void set_position(Vector3<Scalar> new_position);
 
+        void set_position(Scalar x, Scalar y, Scalar z);
+
         void set_rotation(Rotation<Scalar> new_rotation);
 
         void set_pose(Vector3<Scalar> new_position, Rotation<Scalar> new_rotation);

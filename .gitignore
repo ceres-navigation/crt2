@@ -6,6 +6,12 @@
 *.asv
 *.swp*
 
+# Ignores for possible test data:
+*.obj
+*.OBJ
+*.mtl
+*.ply
+
 # Image ignores:
 *.png
 *.ppm

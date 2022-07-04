@@ -13,7 +13,7 @@ struct Triangle {
 };
 
 template <typename Scalar>
-void intersect_tri(Ray<Scalar>& ray, const Triangle<Scalar>& triangle);
+void intersect_triangle(Ray<Scalar>& ray, const Triangle<Scalar>& triangle);
 
 template <typename Scalar>
 Scalar intersect_AABB(const Ray<Scalar> ray, const Vector3<Scalar> bmin, const Vector3<Scalar> bmax);

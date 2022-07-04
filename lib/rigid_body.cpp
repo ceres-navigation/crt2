@@ -32,6 +32,12 @@ void RigidBody<Scalar>::set_position(Vector3<Scalar> new_position) {
 };
 
 template <typename Scalar>
+void RigidBody<Scalar>::set_position(Scalar x, Scalar y, Scalar z) {
+    this -> position = Vector3<Scalar>(x,y,z);
+};
+
+
+template <typename Scalar>
 void RigidBody<Scalar>::set_rotation(Rotation<Scalar> new_rotation){
     this -> rotation = new_rotation;
 };

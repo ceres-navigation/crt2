@@ -8,6 +8,8 @@ class SimpleSensor: public Sensor<Scalar>{
     public:
         SimpleSensor(Scalar resolution[2], Scalar size[2]);
 
+        SimpleSensor(Scalar resolution[2], Scalar size[2], Scalar center[2]);
+
         Scalar get_resolution_h();
 
         Scalar get_resolution_v();

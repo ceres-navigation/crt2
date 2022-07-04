@@ -41,10 +41,10 @@ Ray<Scalar> SimpleCamera<Scalar>::pixel_to_ray(Scalar u, Scalar v) {
     // Generate rays in the camera frame:
     Vector3<Scalar> dir;
     if (this->z_positive){
-        dir = normalize(Vector3<Scalar>((-this->center[0]+u)/this->scale[0], (this->center[1]-v)/this->scale[1], this->focal_length));
+        dir = normalize(Vector3<Scalar>((-this->center[0]+u+0.5)/this->scale[0], (this->center[1]-v-0.5)/this->scale[1], this->focal_length));
     }
     else {
-        dir = normalize(Vector3<Scalar>((-this->center[0]+u)/this->scale[0], (this->center[1]-v)/this->scale[1], -this->focal_length));
+        dir = normalize(Vector3<Scalar>((-this->center[0]+u+0.5)/this->scale[0], (this->center[1]-v-0.5)/this->scale[1], -this->focal_length));
     } 
 
     // Rotate rays to the world frame (NOTE: the TRANSPOSE of the provided rotation is used for this)
