@@ -24,4 +24,3 @@ cmake -DCMAKE_INSTALL_PREFIX=../prefix -DTBB_TEST=OFF ..
 cmake --build .
 cmake --install .
 cd ../../
-

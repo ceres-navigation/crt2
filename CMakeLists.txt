@@ -8,8 +8,8 @@ project(rt CXX)
 set(CMAKE_CXX_STANDARD 17)
 
 # Uncomment these lines to compile for debugging:
-set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_CXX_FLAGS_DEBUG "-g")
+# set(CMAKE_BUILD_TYPE Debug)
+# set(CMAKE_CXX_FLAGS_DEBUG "-g")
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
@@ -20,9 +20,12 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -fno-math-errno -fno-signed-zeros -fno-trapping
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
+include_directories(include)
+include_directories(include/sensors)
+include_directories(external/tinyobjloader)
+include_directories(external/zstd/lib)
+include_directories(external/oneTBB/include)
+
+add_subdirectory(external)
 add_subdirectory(lib)
 add_subdirectory(src)
-add_subdirectory(external)
-
-include_directories(include)
-include_directories(external/pybind11/include)

@@ -2,14 +2,23 @@ link_directories(${CMAKE_SOURCE_DIR}/external/zstd/prefix/lib)
 find_package(zstd PATHS ${CMAKE_SOURCE_DIR}/external/zstd/prefix)
 
 add_library(
-    geometry
+    rt
     geometry.cpp
+    rigid_body.cpp
+    ray.cpp
+
+    sensors/simple_sensor.cpp
+
+    cameras/simple_camera.cpp
+
+    lights/point_light.cpp
+
+    vector_math/vector.cpp
+    vector_math/rotation.cpp
+
+    primitives/triangle.cpp
 )
 
-target_link_libraries(geometry PRIVATE PUBLIC zstd)
+target_link_libraries(rt PRIVATE PUBLIC zstd)
 
-include_directories(${CMAKE_SOURCE_DIR}/include)
-include_directories(${CMAKE_SOURCE_DIR}/external/tinyobjloader)
-include_directories(${CMAKE_SOURCE_DIR}/external/zstd/lib)
-
-set_target_properties(geometry PROPERTIES LINKER_LANGUAGE CXX)
+set_target_properties(rt PROPERTIES LINKER_LANGUAGE CXX)

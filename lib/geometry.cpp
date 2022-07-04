@@ -92,11 +92,17 @@ void Geometry<Scalar>::read_binary(const char* file_path){
     FILE* file = fopen(file_path, "rb");
 
     // Verify magic keyword:
-    fread(&magic_return, sizeof(char), 6, file);
-    fread(&compressed_v_size, sizeof(uint32_t), 1, file);
-    fread(&compressed_f_size, sizeof(uint32_t), 1, file);
-    fread(&num_v, sizeof(uint32_t), 1, file);
-    fread(&num_f, sizeof(uint32_t), 1, file);
+    size_t fread_ret;
+    fread_ret = fread(&magic_return, sizeof(char), 6, file);
+    if (fread_ret){ std::cout << fread_ret <<"\n";};
+    fread_ret = fread(&compressed_v_size, sizeof(uint32_t), 1, file);
+    if (fread_ret){ std::cout << fread_ret <<"\n";};
+    fread_ret = fread(&compressed_f_size, sizeof(uint32_t), 1, file);
+    if (fread_ret){ std::cout << fread_ret <<"\n";};
+    fread_ret = fread(&num_v, sizeof(uint32_t), 1, file);
+    if (fread_ret){ std::cout << fread_ret <<"\n";};
+    fread_ret = fread(&num_f, sizeof(uint32_t), 1, file);
+    if (fread_ret){ std::cout << fread_ret <<"\n";};
 
     // TODO: DEBUG WHY THIS DOESNT WORK:
     for (int i = 0; i < magic_length; i++){
@@ -105,7 +111,8 @@ void Geometry<Scalar>::read_binary(const char* file_path){
 
     // Decompress vertices:
     auto v_compressed = new uint8_t[compressed_v_size];
-    fread(v_compressed, sizeof(uint8_t), compressed_v_size, file);
+    fread_ret = fread(v_compressed, sizeof(uint8_t), compressed_v_size, file);
+    if (fread_ret){ std::cout << fread_ret <<"\n";};
     auto v_array = new Scalar[num_v][3];
     auto size_v = ZSTD_decompress(v_array, num_v*3*sizeof(Scalar), v_compressed, compressed_v_size);
     if (ZSTD_isError(size_v)) {
@@ -114,7 +121,8 @@ void Geometry<Scalar>::read_binary(const char* file_path){
 
     // Decompress faces:
     auto f_compressed = new uint8_t[compressed_f_size];
-    fread(f_compressed, sizeof(uint8_t), compressed_f_size, file);
+    fread_ret = fread(f_compressed, sizeof(uint8_t), compressed_f_size, file);
+    if (fread_ret){ std::cout << fread_ret <<"\n";};
     auto f_array = new uint32_t[num_f][3];
     auto size_f = ZSTD_decompress(f_array, num_f*3*sizeof(uint32_t), f_compressed, compressed_f_size);
     if (ZSTD_isError(size_f)) {
