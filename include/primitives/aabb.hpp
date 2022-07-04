@@ -2,6 +2,7 @@
 #define __AABB_H_
 
 #include "vector_math/vector.hpp"
+#include "primitives/ray.hpp"
 
 template <typename Scalar>
 struct AABB 
@@ -19,5 +20,8 @@ struct AABB
         return e[0] * e[1] + e[1] * e[2] + e[2] * e[0]; 
     }
 };
+
+template<typename Scalar>
+Scalar intersect_aabb(const Ray<Scalar>& ray, const Vector3<Scalar> bmin, const Vector3<Scalar> bmax);
 
 #endif
