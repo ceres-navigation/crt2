@@ -29,6 +29,7 @@ Rotation<Scalar> Rotation<Scalar>::transpose(){
     return Rotation<Scalar>(transposed_elements);
 }
 
+
 // Explicitly Instantiate floats and doubles:
 template struct Rotation<float>;
 template struct Rotation<double>;

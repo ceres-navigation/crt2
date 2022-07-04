@@ -3,7 +3,7 @@
 
 #include "lights/light.hpp"
 #include "vector_math/vector.hpp"
-#include "ray.hpp"
+#include "primitives/ray.hpp"
 
 template <typename Scalar>
 class PointLight: public Light<Scalar>  {

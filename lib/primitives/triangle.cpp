@@ -1,5 +1,5 @@
 #include "primitives/triangle.hpp"
-#include "ray.hpp"
+#include "primitives/ray.hpp"
 #include "vector_math/vector.hpp"
 
 template <typename Scalar>
@@ -35,6 +35,14 @@ Scalar intersect_AABB(const Ray<Scalar> ray, const Vector3<Scalar> bmin, const V
     tmin = std::max( tmin, std::min( tz1, tz2 ) ), tmax = std::min( tmax, std::max( tz1, tz2 ) );
     if (tmax >= tmin && tmin < ray.hit.t && tmax > 0) return tmin; else return std::numeric_limits<Scalar>::max();
 };
+
+
+// Explicitly Instantiate floats and doubles:
+template struct Triangle<float>;
+template struct Triangle<double>;
+
+template struct TriangleData<float>;
+template struct TriangleData<double>;
 
 template void intersect_triangle<float>(Ray<float>& ray, const Triangle<float>& triangle);
 template void intersect_triangle<double>(Ray<double>& ray, const Triangle<double>& triangle);

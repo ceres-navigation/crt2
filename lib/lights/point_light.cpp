@@ -1,4 +1,5 @@
 #include "lights/point_light.hpp"
+#include "primitives/ray.hpp"
 
 template <typename Scalar>
 PointLight<Scalar>::PointLight(Scalar intensity){
@@ -22,6 +23,7 @@ template <typename Scalar>
 Scalar PointLight<Scalar>::get_intensity(Vector3<Scalar> point) { 
     return std::min(this->intensity / dot(point - this->position, point - this->position), Scalar(10000));
 };
+
 
 // Explicitly Instantiate floats and doubles:
 template class PointLight<float>;

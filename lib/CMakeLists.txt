@@ -5,18 +5,21 @@ add_library(
     rt
     geometry.cpp
     rigid_body.cpp
-    ray.cpp
 
-    sensors/simple_sensor.cpp
+    acceleration/bvh.cpp
 
     cameras/simple_camera.cpp
 
     lights/point_light.cpp
 
+    primitives/ray.cpp
+    primitives/aabb.cpp
+    primitives/triangle.cpp
+
+    sensors/simple_sensor.cpp
+
     vector_math/vector.cpp
     vector_math/rotation.cpp
-
-    primitives/triangle.cpp
 )
 
 target_link_libraries(rt PRIVATE PUBLIC zstd)

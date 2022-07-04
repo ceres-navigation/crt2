@@ -3,7 +3,7 @@
 
 #include "cameras/camera.hpp"
 #include "sensors/sensor.hpp"
-#include "ray.hpp"
+#include "primitives/ray.hpp"
 
 template <typename Scalar>
 class SimpleCamera: public Camera<Scalar> {

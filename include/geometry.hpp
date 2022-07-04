@@ -19,7 +19,7 @@ class Geometry {
         std::vector<std::vector<Scalar>> vertices;
         std::vector<std::vector<uint32_t>> faces;
 
-        Geometry();
+        Geometry() {};
 
         void read_obj(const char* file_path);
 

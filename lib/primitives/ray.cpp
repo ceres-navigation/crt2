@@ -1,5 +1,5 @@
 #include "vector_math/vector.hpp"
-#include "ray.hpp"
+#include "primitives/ray.hpp"
 
 template <typename Scalar>
 Ray<Scalar>::Ray() {
@@ -21,6 +21,7 @@ Ray<Scalar>::Ray(Vector3<Scalar> origin, Vector3<Scalar> direction, Scalar t_max
     this -> direction = direction;
     this -> t = t_max;
 };
+
 
 // Explicitly Instantiate floats and doubles:
 template struct Ray<float>;

@@ -1,8 +1,10 @@
 #include "sensors/sensor.hpp"
-#include "ray.hpp"
 
 #include "cameras/simple_camera.hpp"
 #include "vector_math/vector.hpp"
+
+#include "primitives/ray.hpp"
+
 
 template <typename Scalar>
 SimpleCamera<Scalar>::SimpleCamera(Scalar focal_length, Sensor<Scalar> &sensor, bool z_positive){
@@ -54,6 +56,7 @@ Ray<Scalar> SimpleCamera<Scalar>::pixel_to_ray(Scalar u, Scalar v) {
     Ray<Scalar> ray(this->position, dir);
     return ray;
 };
+
 
 // Explicitly Instantiate floats and doubles:
 template class SimpleCamera<float>;

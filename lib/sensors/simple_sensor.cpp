@@ -32,6 +32,7 @@ Scalar SimpleSensor<Scalar>::get_resolution_v(){
     return this->resolution[1];
 };
 
+
 // Explicitly Instantiate floats and doubles:
 template class SimpleSensor<float>;
 template class SimpleSensor<double>;

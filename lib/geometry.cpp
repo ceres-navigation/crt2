@@ -18,9 +18,6 @@
 #include "geometry.hpp"
 
 template <typename Scalar>
-Geometry<Scalar>::Geometry(){};
-
-template <typename Scalar>
 void Geometry<Scalar>::read_obj(const char* file_path){
     this->vertices.clear();
     this->faces.clear();
@@ -243,6 +240,7 @@ void Geometry<Scalar>::write_binary(const char* file_path){
     delete [] compressed_v;
     delete [] compressed_f;
 };
+
 
 // Explicitly Instantiate floats and doubles:
 template class Geometry<float>;

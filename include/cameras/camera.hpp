@@ -1,9 +1,9 @@
 #ifndef __CAMERA_H_
 #define __CAMERA_H_
 
-#include "ray.hpp"
 #include "rigid_body.hpp"
 #include "sensors/sensor.hpp"
+#include "primitives/ray.hpp"
 
 template <typename Scalar>
 class Camera: public RigidBody<Scalar> {
