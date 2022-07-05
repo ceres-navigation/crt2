@@ -8,7 +8,7 @@ template <typename Scalar>
 struct AABB 
 { 
     Vector3<Scalar> bmin = Vector3<Scalar>(std::numeric_limits<Scalar>::max());
-    Vector3<Scalar> bmax = Vector3<Scalar>(std::numeric_limits<Scalar>::min());
+    Vector3<Scalar> bmax = Vector3<Scalar>(-std::numeric_limits<Scalar>::max());
 
     void grow(Vector3<Scalar> p);
 

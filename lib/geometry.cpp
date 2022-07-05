@@ -16,6 +16,25 @@
 #include <tiny_obj_loader.h>
 
 #include "geometry.hpp"
+#include "acceleration/bvh.hpp"
+
+#include "primitives/triangle.hpp"
+#include "primitives/ray.hpp"
+
+template <typename Scalar>
+Geometry<Scalar>::Geometry(){
+    this->name = "Geometry Instance";
+}
+
+template <typename Scalar>
+Geometry<Scalar>::Geometry(std::string name){
+    this->name = name;
+}
+
+template <typename Scalar>
+Geometry<Scalar>::~Geometry(){
+    delete[] this->triangles;
+}
 
 template <typename Scalar>
 void Geometry<Scalar>::read_obj(const char* file_path){
@@ -72,15 +91,18 @@ void Geometry<Scalar>::read_obj(const char* file_path){
             shapes[s].mesh.material_ids[f];
         }
     }
+
+    // Get the triangles:
+    this->construct_triangles();
 };
 
 template <typename Scalar>
-Triangle<Scalar>* Geometry<Scalar>::triangles(uint32_t &num_triangles){
+void Geometry<Scalar>::construct_triangles(){
     // Get the number of triangles:
-    num_triangles = this->faces.size();
+    this->num_triangles = this->faces.size();
 
     // Allocate triangles on heap:
-    Triangle<Scalar>* triangles = new Triangle<Scalar>[num_triangles];
+    this->triangles = new Triangle<Scalar>[this->num_triangles];
 
     // Populate triangles with the data read in from a file:
     for (uint32_t i = 0; i < num_triangles; i++){
@@ -90,13 +112,28 @@ Triangle<Scalar>* Geometry<Scalar>::triangles(uint32_t &num_triangles){
         auto v1 = Vector3<Scalar>(this->vertices[face_def[1]][0], this->vertices[face_def[1]][1], this->vertices[face_def[1]][2]);
         auto v2 = Vector3<Scalar>(this->vertices[face_def[2]][0], this->vertices[face_def[2]][1], this->vertices[face_def[2]][2]);
 
-        triangles[i].vertex0 = v0;
-        triangles[i].vertex1 = v1;
-        triangles[i].vertex2 = v2;
-    }
+        this->triangles[i].vertex0 = v0;
+        this->triangles[i].vertex1 = v1;
+        this->triangles[i].vertex2 = v2;
 
-    return triangles;
+        // TODO: Include additional triangle data...
+    }
 };
+
+template <typename Scalar>
+void Geometry<Scalar>::build_bvh(){
+    if (this->num_triangles == 0){
+        std::cout << this->name << " (instance of Geometry) was not provided any geometry!\n";
+        std::exit(0);
+    }
+    std::cout << "Building BVH for Geometry instance named: " << this->name << "...\n";
+    this->bvh.build(this->triangles, this->num_triangles);
+}
+
+template <typename Scalar>
+void Geometry<Scalar>::intersect(Ray<Scalar> &ray){
+    this->bvh.intersect(ray, this->triangles);
+}
 
 template <typename Scalar>
 void Geometry<Scalar>::read_binary(const char* file_path){
@@ -175,6 +212,9 @@ void Geometry<Scalar>::read_binary(const char* file_path){
     delete [] v_array;
     delete [] f_compressed;
     delete [] f_array;
+
+    // Get the triangles:
+    this->construct_triangles();
 };
 
 template <typename Scalar>

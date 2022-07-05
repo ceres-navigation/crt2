@@ -3,7 +3,9 @@
 
 #include <vector>
 #include "primitives/triangle.hpp"
+#include "primitives/ray.hpp"
 #include <stdint.h>
+#include "acceleration/bvh.hpp"
 
 template <typename Scalar>
 class Geometry {
@@ -14,20 +16,37 @@ class Geometry {
         // Define the magic phrase at start of the file:
         const char* magic = "CRTOBJ";
         const int magic_length = 6;
+        BVH<Scalar> bvh;
+
+        std::string name;
 
         // Definition of the geomtry to be stored:
-        std::vector<std::vector<Scalar>> vertices;
-        std::vector<std::vector<uint32_t>> faces;
+        std::vector<std::vector<Scalar>> vertices; // TODO: REMOVE THIS!!!  Everything in triangle form
+        std::vector<std::vector<uint32_t>> faces; // TODO: REMOVE THIS!!!  Everything in triangle form
 
-        Geometry() {};
+        // Triangle defintions:
+        uint32_t num_triangles = 0;
+        Triangle<Scalar> *triangles;
+        TriangleData<Scalar> *triangle_data;
+
+        Geometry();
+
+        Geometry(std::string name);
+
+        ~Geometry();
 
         void read_obj(const char* file_path);
 
-        Triangle<Scalar>* triangles(uint32_t &num_triangles);
+        void build_bvh();
+
+        void intersect(Ray<Scalar> &ray);
 
         void read_binary(const char* file_path);
 
         void write_binary(const char* file_path);
+
+    private: 
+        void construct_triangles();
 };
 
 #endif

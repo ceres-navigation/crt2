@@ -1,5 +1,7 @@
 #include <vector>
 
+#include "acceleration/bvh.hpp"
+
 #include "vector_math/vector.hpp"
 #include "sensors/simple_sensor.hpp"
 
@@ -28,7 +30,7 @@ void print_vector(Vector3<Scalar> v){
     std::cout << "[" << v[0] << ", " << v[1] << ", " << v[2] << "]\n";
 }
 
-void render(Camera<Scalar> &camera, Light<Scalar> &light, Triangle<Scalar> *triangles, uint32_t num_triangles){
+void render(Camera<Scalar> &camera, Light<Scalar> &light, Geometry<Scalar> &geometry){
     //Simple ray tracing:
     auto res_h = camera.sensor->get_resolution_h();
     auto res_v = camera.sensor->get_resolution_v();
@@ -42,10 +44,8 @@ void render(Camera<Scalar> &camera, Light<Scalar> &light, Triangle<Scalar> *tria
             // Generate a ray:
             Ray<Scalar> ray = camera.pixel_to_ray(u,v);
 
-            // Trace ray against all triangles:
-            for (uint32_t i = 0; i < num_triangles; i++){
-                intersect_triangle<Scalar>(ray, triangles[i]);
-            }
+            // Trace against bvh:
+            geometry.intersect(ray);
 
             // Format an output image:
             if (ray.hit.t < std::numeric_limits<Scalar>::max()) {
@@ -70,38 +70,22 @@ int main(){
 
     // Define camera:
     SimpleCamera<Scalar> camera(30, sensor, true);
-    camera.set_position(0,0,-18);
+    camera.set_position(0,0,-5);
 
     // Define a simple light:
     PointLight<Scalar> light(1);
 
-    // // Define some random triangles:
-    // uint32_t num_triangles = 100;
-    // auto triangles = new Triangle<Scalar>[num_triangles];
+    // Load geometry and construct BVH:
+    Geometry<Scalar> geometry("cube");
+    // geometry.read_obj("../suzanne.obj");
+    // geometry.read_obj("../cube.obj");
+    geometry.read_obj("../random.obj");
 
-    // // Setup random number generator:
-    // std::random_device dev;
-    // std::default_random_engine rng;
-    // std::uniform_real_distribution<double> dist(-1.0,1.0);
-
-    // for (uint32_t i = 0; i < num_triangles; i++){
-    //     auto translation = Vector3<Scalar>(10*dist(rng),10*dist(rng),0);
-    //     triangles[i].vertex0 = Vector3<Scalar>(dist(rng),dist(rng),dist(rng)) + translation;
-    //     triangles[i].vertex1 = Vector3<Scalar>(dist(rng),dist(rng),dist(rng)) + translation;
-    //     triangles[i].vertex2 = Vector3<Scalar>(dist(rng),dist(rng),dist(rng)) + translation;
-    // }
-
-    // Load triangles from sample .OBJ file:
-    uint32_t num_triangles = 0;
-    Geometry<Scalar> geometry;
-    geometry.read_obj("../suzanne.obj");
-    Triangle<Scalar>* triangles = geometry.triangles(num_triangles);
+    geometry.build_bvh();
 
     // Ray trace:
-    render(camera, light, triangles, num_triangles);
-    
-    // Heap allocation requires deletion when finished:
-    delete [] triangles;
+    std::cout << "Beginning render...\n";
+    render(camera, light, geometry);
 
     return 0;
 }
