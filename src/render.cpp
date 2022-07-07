@@ -78,8 +78,8 @@ int main(){
     // Load geometry and construct BVH:
     Geometry<Scalar> geometry("cube");
     // geometry.read_obj("../suzanne.obj");
-    // geometry.read_obj("../cube.obj");
-    geometry.read_obj("../random.obj");
+    geometry.read_obj("../cube.obj");
+    // geometry.read_obj("../random.obj");
 
     geometry.build_bvh();
 
