@@ -5,7 +5,6 @@
 #include "primitives/triangle.hpp"
 #include "primitives/ray.hpp"
 #include <stdint.h>
-#include "acceleration/bvh.hpp"
 
 template <typename Scalar>
 class Geometry {
@@ -16,7 +15,7 @@ class Geometry {
         // Define the magic phrase at start of the file:
         const char* magic = "CRTOBJ";
         const int magic_length = 6;
-        BVH<Scalar> bvh;
+        // BVH<Scalar> bvh;
 
         std::string name;
 

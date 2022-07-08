@@ -122,17 +122,12 @@ void Geometry<Scalar>::construct_triangles(){
 
 template <typename Scalar>
 void Geometry<Scalar>::build_bvh(){
-    if (this->num_triangles == 0){
-        std::cout << this->name << " (instance of Geometry) was not provided any geometry!\n";
-        std::exit(0);
-    }
-    std::cout << "Building BVH for Geometry instance named: " << this->name << "...\n";
-    this->bvh.build(this->triangles, this->num_triangles);
+
 }
 
 template <typename Scalar>
 void Geometry<Scalar>::intersect(Ray<Scalar> &ray){
-    this->bvh.intersect(ray, this->triangles);
+    // this->bvh.intersect(ray, this->triangles);
 }
 
 template <typename Scalar>
