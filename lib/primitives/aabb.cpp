@@ -1,6 +1,9 @@
 #include "primitives/aabb.hpp"
 #include "vector_math/vector.hpp"
 
+
+//std::numeric_limits<Scalar>::max()
+
 template <typename Scalar>
 void AABB<Scalar>::grow(Vector3<Scalar> p){
     bmin = min(bmin, p);
@@ -9,7 +12,7 @@ void AABB<Scalar>::grow(Vector3<Scalar> p){
 
 template <typename Scalar>
 void AABB<Scalar>::grow(AABB<Scalar>& b) {
-    if (b.bmin[0] != std::numeric_limits<Scalar>::max()) {
+    if (b.bmin[0] != 1e30f) {
         grow( b.bmin );
         grow( b.bmax );
     }
@@ -27,7 +30,7 @@ Scalar intersect_aabb( const Ray<Scalar>& ray, const Vector3<Scalar> bmin, const
         return tmin;
     } 
     else {
-        return std::numeric_limits<Scalar>::max();
+        return 1e30f;
     }
 };
 
