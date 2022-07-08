@@ -26,22 +26,22 @@ using Scalar = float;
 
 struct BVHNode {
     Vector3<Scalar> aabbMin, aabbMax;
-    uint leftNode, firstTriIdx, triCount;
+    uint leftFirst, triCount;
     bool isLeaf() { return triCount > 0; }
 };
 
 Triangle<Scalar> tri[N];
 uint triIdx[N];
-BVHNode bvhNode[N * 2 - 1];
+BVHNode bvhNode[N * 2];
 uint rootNodeIdx = 0;
 uint nodesUsed = 1;
 
 void UpdateNodeBounds( uint nodeIdx )
 {
     BVHNode& node = bvhNode[nodeIdx];
-    node.aabbMin = Vector3<Scalar>( 1e30f );
-    node.aabbMax = Vector3<Scalar>( -1e30f );
-    for (uint first = node.firstTriIdx, i = 0; i < node.triCount; i++)
+    node.aabbMin = Vector3<Scalar>(  std::numeric_limits<Scalar>::max() );
+    node.aabbMax = Vector3<Scalar>( -std::numeric_limits<Scalar>::max() );
+    for (uint first = node.leftFirst, i = 0; i < node.triCount; i++)
     {
         uint leafTriIdx = triIdx[first + i];
         Triangle<Scalar>& leafTri = tri[leafTriIdx];
@@ -65,33 +65,39 @@ void Subdivide( uint nodeIdx )
     // determine split axis and position
     Vector3<Scalar> extent = node.aabbMax - node.aabbMin;
     int axis = 0;
-    if (extent[1] > extent[0]) axis = 1;
-    if (extent[2] > extent[axis]) axis = 2;
+    if (extent[1] > extent[0]){
+        axis = 1;
+    }
+    if (extent[2] > extent[axis]){
+        axis = 2;
+    }
     float splitPos = node.aabbMin[axis] + extent[axis] * (Scalar) 0.5f;
 
     // in-place partition
-    int i = node.firstTriIdx;
+    int i = node.leftFirst;
     int j = i + node.triCount - 1;
-    while (i <= j)
-    {
-        if (tri[triIdx[i]].centroid[axis] < splitPos)
+    while (i <= j) {
+        if (tri[triIdx[i]].centroid[axis] < splitPos) {
             i++;
-        else
+        }
+        else {
             std::swap( triIdx[i], triIdx[j--] );
+        }
     }
+    
     // abort split if one of the sides is empty
-    uint leftCount = i - node.firstTriIdx;
+    uint leftCount = i - node.leftFirst;
     if (leftCount == 0 || leftCount == node.triCount){
         return;
     } 
     // create child nodes
     int leftChildIdx = nodesUsed++;
     int rightChildIdx = nodesUsed++;
-    node.leftNode = leftChildIdx;
-    bvhNode[leftChildIdx].firstTriIdx = node.firstTriIdx;
+    bvhNode[leftChildIdx].leftFirst = node.leftFirst;
     bvhNode[leftChildIdx].triCount = leftCount;
-    bvhNode[rightChildIdx].firstTriIdx = i;
+    bvhNode[rightChildIdx].leftFirst = i;
     bvhNode[rightChildIdx].triCount = node.triCount - leftCount;
+    node.leftFirst = leftChildIdx;
     node.triCount = 0;
     UpdateNodeBounds( leftChildIdx );
     UpdateNodeBounds( rightChildIdx );
@@ -111,8 +117,7 @@ void BuildBVH()
 
     // assign all triangles to root node
     BVHNode& root = bvhNode[rootNodeIdx];
-    root.leftNode = 0;
-    root.firstTriIdx = 0;
+    root.leftFirst= 0;
     root.triCount = N;
     UpdateNodeBounds( rootNodeIdx );
 
@@ -130,12 +135,12 @@ void IntersectBVH( Ray<Scalar>& ray, const uint nodeIdx )
 
     if (node.isLeaf()) {
         for (uint i = 0; i < node.triCount; i++ ){
-            intersect_triangle( ray, tri[triIdx[node.firstTriIdx + i]] );
+            intersect_triangle( ray, tri[triIdx[node.leftFirst + i]] );
         }
     }
     else {
-        IntersectBVH( ray, node.leftNode );
-        IntersectBVH( ray, node.leftNode + 1 );
+        IntersectBVH( ray, node.leftFirst );
+        IntersectBVH( ray, node.leftFirst + 1 );
     }
 }
 
