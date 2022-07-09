@@ -44,8 +44,9 @@ int main(){
     // Load geometry:
     std::cout << "Reading Geometry...\n";
     start = std::chrono::high_resolution_clock::now();
-    Geometry<Scalar> geometry("cube");
+    Geometry<Scalar> geometry;
     geometry.read_obj("../suzanne.obj");
+    // geometry.read_obj("../random.obj");
     stop = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
     std::cout << "    " << geometry.num_triangles << " triangles loaded in " << duration.count() << " milliseconds\n";
@@ -58,18 +59,23 @@ int main(){
     duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
     std::cout << "    BVH built in " << duration.count() << " milliseconds\n";
 
-    // Render:
+    // Render (WITH TILES):
+    int tile_size = 16;
     std::cout << "Rendering with " << sensor.get_resolution_h()*sensor.get_resolution_v() << " rays...\n";
     start = std::chrono::high_resolution_clock::now();
     uint8_t  image[(int) sensor.get_resolution_h()][(int) sensor.get_resolution_v()] = {0};
-    for( int u = 0; u < sensor.get_resolution_h(); u++) {
-        for (int v = 0; v < sensor.get_resolution_v(); v++){
-            auto ray = camera.pixel_to_ray(u,v);
-            geometry.intersect( ray );
+    for( int u = 0; u < sensor.get_resolution_h(); u+=tile_size) {
+        for (int v = 0; v < sensor.get_resolution_v(); v+=tile_size){
+            for (int x = 0; x < tile_size; x++){
+                for (int y = 0; y < tile_size; y++){
+                    auto ray = camera.pixel_to_ray(u+x,v+y);
+                    geometry.intersect( ray );
 
-            // Format an output image:
-            if (ray.hit.t < std::numeric_limits<Scalar>::max()) {
-                image[u][v] = 255;
+                    // Format an output image:
+                    if (ray.hit.t < std::numeric_limits<Scalar>::max()) {
+                        image[u+x][v+y] = 255;
+                    }
+                }
             }
         }
     }
@@ -81,7 +87,6 @@ int main(){
     ppm2 << "P5\n" << sensor.get_resolution_h() << ' ' << sensor.get_resolution_v() << "\n255\n";
     ppm2.write(reinterpret_cast<char *>(image), sensor.get_resolution_h() * sensor.get_resolution_v() * sizeof(uint8_t));
     ppm2.flush();
-
 
     return 0;
 }

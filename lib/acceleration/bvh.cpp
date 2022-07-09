@@ -6,12 +6,25 @@
 #include "vector_math/vector.hpp"
 
 template <typename Scalar>
+BVH<Scalar>::BVH(){
+    this->tri = nullptr;
+    this->bvhNode = nullptr;
+    this->triIdx = nullptr;
+};
+
+template <typename Scalar>
 BVH<Scalar>::BVH(Triangle<Scalar>* triangles, uint num_triangles) {
     this->tri = triangles;
     this->N = num_triangles;
     this->bvhNode = new BVHNode<Scalar>[N*2];
     this->triIdx = new uint[N];
     this->nodesUsed = 1;
+};
+
+template <typename Scalar>
+BVH<Scalar>::~BVH(){
+    delete this->bvhNode;
+    delete this->triIdx;
 };
 
 template <typename Scalar>
@@ -33,6 +46,108 @@ void BVH<Scalar>::UpdateNodeBounds( uint nodeIdx ) {
 };
 
 template <typename Scalar>
+Scalar BVH<Scalar>::EvaluateSAH( BVHNode<Scalar>& node, int axis, Scalar pos ) {
+    // determine triangle counts and bounds for this split candidate
+    AABB<Scalar> leftBox;
+    AABB<Scalar> rightBox;
+    int leftCount = 0;
+    int rightCount = 0;
+    for( uint i = 0; i < node.triCount; i++ ) {
+        Triangle<Scalar>& triangle = tri[triIdx[node.leftFirst + i]];
+        if (triangle.centroid[axis] < pos) {
+            leftCount++;
+            leftBox.grow( triangle.vertex0 );
+            leftBox.grow( triangle.vertex1 );
+            leftBox.grow( triangle.vertex2 );
+        }
+        else {
+            rightCount++;
+            rightBox.grow( triangle.vertex0 );
+            rightBox.grow( triangle.vertex1 );
+            rightBox.grow( triangle.vertex2 );
+        }
+    }
+    Scalar cost = leftCount * leftBox.area() + rightCount * rightBox.area();
+    return cost > 0 ? cost : std::numeric_limits<Scalar>::max();
+}
+
+template <typename Scalar>
+Scalar BVH<Scalar>::FindBestSplitPlane( BVHNode<Scalar>& node, int& axis, Scalar& splitPos){
+    // Scalar bestCost = std::numeric_limits<Scalar>::max();
+    // for (int a = 0; a < 3; a++) for (uint i = 0; i < node.triCount; i++) {
+    //     Triangle<Scalar>& triangle = tri[triIdx[node.leftFirst + i]];
+    //     Scalar candidatePos = triangle.centroid[a];
+    //     Scalar cost = EvaluateSAH( node, a, candidatePos );
+    //     if (cost < bestCost) splitPos = candidatePos, axis = a, bestCost = cost;
+    // }
+    // return bestCost;
+
+    int BINS = 8;
+
+    Scalar bestCost = std::numeric_limits<Scalar>::max();
+    for (int a = 0; a < 3; a++) {
+        Scalar boundsMin = std::numeric_limits<Scalar>::max();
+        Scalar boundsMax = -std::numeric_limits<Scalar>::max();
+        for (uint i = 0; i < node.triCount; i++) {
+            Triangle<Scalar>& triangle = tri[triIdx[node.leftFirst + i]];
+            boundsMin = std::min( boundsMin, triangle.centroid[a] );
+            boundsMax = std::max( boundsMax, triangle.centroid[a] );
+        }
+        if (boundsMin == boundsMax) {
+            continue;
+        }
+
+        // Populate the bins
+        Bin<Scalar> bin[BINS];
+        Scalar scale = BINS / (boundsMax - boundsMin);
+        for (uint i = 0; i < node.triCount; i++) {
+            Triangle<Scalar>& triangle = tri[triIdx[node.leftFirst + i]];
+            int binIdx = std::min( BINS - 1, (int)((triangle.centroid[a] - boundsMin) * scale) );
+            bin[binIdx].triCount++;
+            bin[binIdx].bounds.grow( triangle.vertex0 );
+            bin[binIdx].bounds.grow( triangle.vertex1 );
+            bin[binIdx].bounds.grow( triangle.vertex2 );
+        }
+
+        // Gather data for the N-1 planes between the N bins:
+        Scalar leftArea[BINS - 1];
+        Scalar rightArea[BINS - 1];
+        int leftCount[BINS - 1];
+        int rightCount[BINS - 1];
+        AABB<Scalar> leftBox;
+        AABB<Scalar> rightBox;
+        int leftSum = 0, rightSum = 0;
+        for (int i = 0; i < BINS - 1; i++) {
+            leftSum += bin[i].triCount;
+            leftCount[i] = leftSum;
+            leftBox.grow( bin[i].bounds );
+            leftArea[i] = leftBox.area();
+            rightSum += bin[BINS - 1 - i].triCount;
+            rightCount[BINS - 2 - i] = rightSum;
+            rightBox.grow( bin[BINS - 1 - i].bounds );
+            rightArea[BINS - 2 - i] = rightBox.area();
+        }
+
+        // Calculate SAH cost for the N-1 planes:
+        scale = (boundsMax - boundsMin) / BINS;
+        for (uint i = 1; i < BINS; i++) {
+            Scalar candidatePos = boundsMin + i * scale;
+            Scalar cost = EvaluateSAH( node, a, candidatePos );
+            if (cost < bestCost)
+                splitPos = candidatePos, axis = a, bestCost = cost;
+        }
+    }
+    return bestCost;
+}
+
+template <typename Scalar>
+Scalar BVH<Scalar>::CalculateNodeCost( BVHNode<Scalar>& node ) {
+    Vector3<Scalar> e = node.aabbMax - node.aabbMin; // extent of the node
+    Scalar surfaceArea = e[0] * e[1] + e[1] * e[2] + e[2] * e[0];
+    return node.triCount * surfaceArea;
+}
+
+template <typename Scalar>
 void BVH<Scalar>::Subdivide( uint nodeIdx ) {
     // terminate recursion
     BVHNode<Scalar>& node = bvhNode[nodeIdx];
@@ -41,15 +156,26 @@ void BVH<Scalar>::Subdivide( uint nodeIdx ) {
     } 
 
     // determine split axis and position
-    Vector3<Scalar> extent = node.aabbMax - node.aabbMin;
-    int axis = 0;
-    if (extent[1] > extent[0]){
-        axis = 1;
+    int axis;
+    Scalar splitPos;
+
+    // Simple Fastest Build:
+    // Vector3<Scalar> extent = node.aabbMax - node.aabbMin;
+    // axis = 0;
+    // if (extent[1] > extent[0]){
+    //     axis = 1;
+    // }
+    // if (extent[2] > extent[axis]){
+    //     axis = 2;
+    // }
+    // splitPos = node.aabbMin[axis] + extent[axis] * (Scalar) 0.5;
+
+    // Identify the next best split plane:
+    Scalar splitCost = FindBestSplitPlane(node, axis, splitPos);
+    Scalar nosplitCost = CalculateNodeCost( node );
+    if (splitCost >= nosplitCost){
+        return;
     }
-    if (extent[2] > extent[axis]){
-        axis = 2;
-    }
-    Scalar splitPos = node.aabbMin[axis] + extent[axis] * (Scalar) 0.5;
 
     // in-place partition
     int i = node.leftFirst;

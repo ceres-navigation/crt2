@@ -5,8 +5,7 @@
 #include "primitives/ray.hpp"
 
 template <typename Scalar>
-struct AABB 
-{ 
+struct AABB { 
     Vector3<Scalar> bmin = Vector3<Scalar>(std::numeric_limits<Scalar>::max());
     Vector3<Scalar> bmax = Vector3<Scalar>(-std::numeric_limits<Scalar>::max());
 
@@ -14,11 +13,7 @@ struct AABB
 
     void grow(AABB<Scalar>& b);
 
-    float area() 
-    { 
-        Vector3<Scalar> e = bmax - bmin; // box extent
-        return e[0] * e[1] + e[1] * e[2] + e[2] * e[0]; 
-    }
+    Scalar area();
 };
 
 template<typename Scalar>

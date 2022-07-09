@@ -6,14 +6,15 @@
 template <typename Scalar>
 struct Intersection {
     Vector3<Scalar> n;
-    float t = std::numeric_limits<Scalar>::max();
-    float u, v;
+    Scalar t = std::numeric_limits<Scalar>::max();
+    Scalar u, v;
 };
 
 template <typename Scalar>
 struct Ray {
     Vector3<Scalar> origin;
     Vector3<Scalar> direction;
+    Vector3<Scalar> recip_direction;
     Scalar t;
     Intersection<Scalar> hit;
 

@@ -16,6 +16,12 @@ struct BVHNode {
     bool isLeaf() { return triCount > 0; }
 };
 
+template<typename Scalar>
+struct Bin { 
+    AABB<Scalar> bounds;
+    int triCount = 0; 
+};
+
 template <typename Scalar>
 class BVH{
     public:
@@ -26,11 +32,21 @@ class BVH{
         BVHNode<Scalar>* bvhNode;
         uint* triIdx;
 
+        BVH();
+
         BVH(Triangle<Scalar>* triangles, uint num_triangles);
+
+        ~BVH();
+
+        Scalar FindBestSplitPlane( BVHNode<Scalar>& node, int& axis, Scalar& splitPos);
+
+        Scalar CalculateNodeCost( BVHNode<Scalar>& node );
 
         void UpdateNodeBounds( uint nodeIdx );
 
         void Subdivide( uint nodeIdx );
+
+        Scalar EvaluateSAH( BVHNode<Scalar>& node, int axis, Scalar pos );
 
         void Build();
 

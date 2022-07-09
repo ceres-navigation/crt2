@@ -24,16 +24,21 @@
 template <typename Scalar>
 Geometry<Scalar>::Geometry(){
     this->name = "Geometry Instance";
+    this->bvh = nullptr;
+    this->triangles = nullptr;
 }
 
 template <typename Scalar>
 Geometry<Scalar>::Geometry(std::string name){
     this->name = name;
+    this->bvh = nullptr;
+    this->triangles = nullptr;
 }
 
 template <typename Scalar>
 Geometry<Scalar>::~Geometry(){
-    delete[] this->triangles;
+    delete this->triangles;
+    delete this->bvh;
 }
 
 template <typename Scalar>
