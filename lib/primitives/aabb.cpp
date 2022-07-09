@@ -12,7 +12,7 @@ void AABB<Scalar>::grow(Vector3<Scalar> p){
 
 template <typename Scalar>
 void AABB<Scalar>::grow(AABB<Scalar>& b) {
-    if (b.bmin[0] != 1e30f) {
+    if (b.bmin[0] != std::numeric_limits<Scalar>::max()) {
         grow( b.bmin );
         grow( b.bmax );
     }
@@ -38,7 +38,7 @@ Scalar intersect_aabb( const Ray<Scalar>& ray, const Vector3<Scalar> bmin, const
         return tmin;
     } 
     else {
-        return 1e30f;
+        return std::numeric_limits<Scalar>::max();
     }
 };
 

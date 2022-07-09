@@ -20,7 +20,7 @@
 #include <vector>
 
 // triangle count
-#define N 64
+#define N 1024
 
 using Scalar = float;
 
@@ -129,7 +129,7 @@ void BuildBVH()
 void IntersectBVH( Ray<Scalar>& ray, const uint nodeIdx )
 {
     BVHNode& node = bvhNode[nodeIdx];
-    if (!intersect_aabb( ray, node.aabbMin, node.aabbMax )){
+    if (intersect_aabb( ray, node.aabbMin, node.aabbMax ) == std::numeric_limits<Scalar>::max()){
         return;
     }
 
@@ -178,54 +178,28 @@ int main(){
         tri[i].vertex2 = tri[i].vertex0 + r2;
     }
 
-    // Ray trace:
-    std::cout << "Beginning naive render...\n";
-    auto start = std::chrono::high_resolution_clock::now();
-    uint8_t  image[(int) sensor.get_resolution_h()][(int) sensor.get_resolution_v()] = {0};
-    auto res_h = sensor.get_resolution_h();
-    auto res_v = sensor.get_resolution_v();
-    for( int u = 0; u < res_h; u++) {
-        for (int v = 0; v < res_v; v++){
-            auto ray = camera.pixel_to_ray(u,v);
-            for (int i = 0; i < N; i++){
-                intersect_triangle( ray, tri[i] );
-
-                // Format an output image:
-                if (ray.hit.t < std::numeric_limits<Scalar>::max()) {
-                    image[u][v] = 255;
-                }
-            }
-        }
-    }
-    auto stop = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-    std::cout << "    Naive Render Duration: " << duration.count() << " milliseconds\n";
-    std::string filename = "frame_naive.ppm";
-    std::ofstream ppm(filename, std::ios::binary);
-    ppm << "P5\n" << sensor.get_resolution_h() << ' ' << sensor.get_resolution_v() << "\n255\n";
-    ppm.write(reinterpret_cast<char *>(image), sensor.get_resolution_h() * sensor.get_resolution_v() * sizeof(uint8_t));
-    ppm.flush();
-
     // Build BVH:
     BuildBVH();
+
+    // Render:
     std::cout << "Beginning bvh render...\n";
-    start = std::chrono::high_resolution_clock::now();
-    uint8_t  image2[(int) sensor.get_resolution_h()][(int) sensor.get_resolution_v()] = {0};
-    for( int u = 0; u < res_h; u++) {
-        for (int v = 0; v < res_v; v++){
+    auto start = std::chrono::high_resolution_clock::now();
+    uint8_t  image[(int) sensor.get_resolution_h()][(int) sensor.get_resolution_v()] = {0};
+    for( int u = 0; u < sensor.get_resolution_h(); u++) {
+        for (int v = 0; v < sensor.get_resolution_v(); v++){
             auto ray = camera.pixel_to_ray(u,v);
             IntersectBVH( ray, rootNodeIdx );
 
             // Format an output image:
             if (ray.hit.t < std::numeric_limits<Scalar>::max()) {
-                image2[u][v] = 255;
+                image[u][v] = 255;
             }
         }
     }
-    stop = std::chrono::high_resolution_clock::now();
-    duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
     std::cout << "    BVH Render Duration: " << duration.count() << " milliseconds\n";
-    filename = "frame_bvh.ppm";
+    std::string filename = "frame_bvh.ppm";
     std::ofstream ppm2(filename, std::ios::binary);
     ppm2 << "P5\n" << sensor.get_resolution_h() << ' ' << sensor.get_resolution_v() << "\n255\n";
     ppm2.write(reinterpret_cast<char *>(image), sensor.get_resolution_h() * sensor.get_resolution_v() * sizeof(uint8_t));
