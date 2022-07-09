@@ -122,12 +122,13 @@ void Geometry<Scalar>::construct_triangles(){
 
 template <typename Scalar>
 void Geometry<Scalar>::build_bvh(){
-
+    this->bvh = new BVH<Scalar>(this->triangles, this->num_triangles);
+    this->bvh->Build();
 }
 
 template <typename Scalar>
 void Geometry<Scalar>::intersect(Ray<Scalar> &ray){
-    // this->bvh.intersect(ray, this->triangles);
+    this->bvh->Intersect(ray, 0);
 }
 
 template <typename Scalar>
