@@ -3,6 +3,7 @@ find_package(zstd PATHS ${CMAKE_SOURCE_DIR}/external/zstd/prefix)
 
 add_library(
     rt
+    scene.cpp
     geometry.cpp
     rigid_body.cpp
 
