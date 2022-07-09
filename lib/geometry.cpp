@@ -126,9 +126,15 @@ void Geometry<Scalar>::construct_triangles(){
 };
 
 template <typename Scalar>
-void Geometry<Scalar>::build_bvh(){
+void Geometry<Scalar>::build_bvh(int BINS){
     this->bvh = new BVH<Scalar>(this->triangles, this->num_triangles);
-    this->bvh->Build();
+    this->bvh->Build(BINS);
+}
+
+template <typename Scalar>
+void Geometry<Scalar>::fast_build_bvh(){
+    this->bvh = new BVH<Scalar>(this->triangles, this->num_triangles);
+    this->bvh->FastBuild();
 }
 
 template <typename Scalar>

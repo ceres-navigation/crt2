@@ -31,7 +31,7 @@ int main(){
 
     // Define camera:
     SimpleCamera<Scalar> camera(30, sensor, true);
-    camera.set_position(0,0,-5);
+    camera.set_position(0,0,-3);
 
     // Define a simple light:
     PointLight<Scalar> light(1);

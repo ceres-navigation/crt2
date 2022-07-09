@@ -38,18 +38,19 @@ class BVH{
 
         ~BVH();
 
-        Scalar FindBestSplitPlane( BVHNode<Scalar>& node, int& axis, Scalar& splitPos);
-
-        Scalar CalculateNodeCost( BVHNode<Scalar>& node );
-
         void UpdateNodeBounds( uint nodeIdx );
 
-        void Subdivide( uint nodeIdx );
+        // Functions for Binned BVH building:
+        Scalar FindBestSplitPlane( BVHNode<Scalar>& node, int& axis, Scalar& splitPos);
+        Scalar CalculateNodeCost( BVHNode<Scalar>& node );
+        void Subdivide( uint nodeIdx, int BINS);
+        void Build(int BINS=8);
 
-        Scalar EvaluateSAH( BVHNode<Scalar>& node, int axis, Scalar pos );
+        // Functions for fast BVH building:
+        void FastSubdivide( uint nodeIdx );
+        void FastBuild();
 
-        void Build();
-
+        // Function for ray traversal:
         void Intersect( Ray<Scalar>& ray, const uint nodeIdx );
 };
 

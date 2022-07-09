@@ -38,7 +38,8 @@ class Geometry {
 
         void read_obj(const char* file_path);
 
-        void build_bvh();
+        void build_bvh(int BINS=8);
+        void fast_build_bvh();
 
         void intersect(Ray<Scalar> &ray);
 

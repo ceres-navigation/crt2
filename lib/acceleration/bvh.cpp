@@ -46,42 +46,7 @@ void BVH<Scalar>::UpdateNodeBounds( uint nodeIdx ) {
 };
 
 template <typename Scalar>
-Scalar BVH<Scalar>::EvaluateSAH( BVHNode<Scalar>& node, int axis, Scalar pos ) {
-    // determine triangle counts and bounds for this split candidate
-    AABB<Scalar> leftBox;
-    AABB<Scalar> rightBox;
-    int leftCount = 0;
-    int rightCount = 0;
-    for( uint i = 0; i < node.triCount; i++ ) {
-        Triangle<Scalar>& triangle = tri[triIdx[node.leftFirst + i]];
-        if (triangle.centroid[axis] < pos) {
-            leftCount++;
-            leftBox.grow( triangle.vertex0 );
-            leftBox.grow( triangle.vertex1 );
-            leftBox.grow( triangle.vertex2 );
-        }
-        else {
-            rightCount++;
-            rightBox.grow( triangle.vertex0 );
-            rightBox.grow( triangle.vertex1 );
-            rightBox.grow( triangle.vertex2 );
-        }
-    }
-    Scalar cost = leftCount * leftBox.area() + rightCount * rightBox.area();
-    return cost > 0 ? cost : std::numeric_limits<Scalar>::max();
-}
-
-template <typename Scalar>
 Scalar BVH<Scalar>::FindBestSplitPlane( BVHNode<Scalar>& node, int& axis, Scalar& splitPos){
-    // Scalar bestCost = std::numeric_limits<Scalar>::max();
-    // for (int a = 0; a < 3; a++) for (uint i = 0; i < node.triCount; i++) {
-    //     Triangle<Scalar>& triangle = tri[triIdx[node.leftFirst + i]];
-    //     Scalar candidatePos = triangle.centroid[a];
-    //     Scalar cost = EvaluateSAH( node, a, candidatePos );
-    //     if (cost < bestCost) splitPos = candidatePos, axis = a, bestCost = cost;
-    // }
-    // return bestCost;
-
     int BINS = 8;
 
     Scalar bestCost = std::numeric_limits<Scalar>::max();
@@ -130,25 +95,28 @@ Scalar BVH<Scalar>::FindBestSplitPlane( BVHNode<Scalar>& node, int& axis, Scalar
 
         // Calculate SAH cost for the N-1 planes:
         scale = (boundsMax - boundsMin) / BINS;
-        for (uint i = 1; i < BINS; i++) {
-            Scalar candidatePos = boundsMin + i * scale;
-            Scalar cost = EvaluateSAH( node, a, candidatePos );
-            if (cost < bestCost)
-                splitPos = candidatePos, axis = a, bestCost = cost;
+        for (int i = 0; i < BINS - 1; i++) {
+            float planeCost = 
+            leftCount[i] * leftArea[i] + rightCount[i] * rightArea[i];
+            if (planeCost < bestCost){
+                axis = a;
+                splitPos = boundsMin + scale * (i + 1);
+                bestCost = planeCost;
+            }
         }
     }
     return bestCost;
-}
+};
 
 template <typename Scalar>
 Scalar BVH<Scalar>::CalculateNodeCost( BVHNode<Scalar>& node ) {
     Vector3<Scalar> e = node.aabbMax - node.aabbMin; // extent of the node
     Scalar surfaceArea = e[0] * e[1] + e[1] * e[2] + e[2] * e[0];
     return node.triCount * surfaceArea;
-}
+};
 
 template <typename Scalar>
-void BVH<Scalar>::Subdivide( uint nodeIdx ) {
+void BVH<Scalar>::Subdivide( uint nodeIdx, int BINS) {
     // terminate recursion
     BVHNode<Scalar>& node = bvhNode[nodeIdx];
     if (node.triCount <= 2){
@@ -158,17 +126,6 @@ void BVH<Scalar>::Subdivide( uint nodeIdx ) {
     // determine split axis and position
     int axis;
     Scalar splitPos;
-
-    // Simple Fastest Build:
-    // Vector3<Scalar> extent = node.aabbMax - node.aabbMin;
-    // axis = 0;
-    // if (extent[1] > extent[0]){
-    //     axis = 1;
-    // }
-    // if (extent[2] > extent[axis]){
-    //     axis = 2;
-    // }
-    // splitPos = node.aabbMin[axis] + extent[axis] * (Scalar) 0.5;
 
     // Identify the next best split plane:
     Scalar splitCost = FindBestSplitPlane(node, axis, splitPos);
@@ -207,12 +164,12 @@ void BVH<Scalar>::Subdivide( uint nodeIdx ) {
     UpdateNodeBounds( rightChildIdx );
 
     // recurse
-    Subdivide( leftChildIdx );
-    Subdivide( rightChildIdx );
+    Subdivide( leftChildIdx, BINS);
+    Subdivide( rightChildIdx, BINS );
 };
 
 template <typename Scalar>
-void BVH<Scalar>::Build() {
+void BVH<Scalar>::Build(int BINS) {
     for (uint i = 0; i < N; i++){
         tri[i].centroid = (tri[i].vertex0 + tri[i].vertex1 + tri[i].vertex2) * (Scalar) 0.3333;
     
@@ -226,7 +183,80 @@ void BVH<Scalar>::Build() {
     UpdateNodeBounds( 0 );
 
     // subdivide recursively
-    Subdivide( 0 );
+    Subdivide( 0, BINS);
+};
+
+template <typename Scalar>
+void BVH<Scalar>::FastSubdivide(uint nodeIdx){
+    // terminate recursion
+    BVHNode<Scalar>& node = bvhNode[nodeIdx];
+    if (node.triCount <= 2){
+        return;
+    } 
+
+    // determine split axis and position
+    int axis;
+    Scalar splitPos;
+    Vector3<Scalar> extent = node.aabbMax - node.aabbMin;
+    axis = 0;
+    if (extent[1] > extent[0]){
+        axis = 1;
+    }
+    if (extent[2] > extent[axis]){
+        axis = 2;
+    }
+    splitPos = node.aabbMin[axis] + extent[axis] * (Scalar) 0.5;
+
+    // in-place partition
+    int i = node.leftFirst;
+    int j = i + node.triCount - 1;
+    while (i <= j) {
+        if (tri[triIdx[i]].centroid[axis] < splitPos) {
+            i++;
+        }
+        else {
+            std::swap( triIdx[i], triIdx[j--] );
+        }
+    }
+    
+    // abort split if one of the sides is empty
+    uint leftCount = i - node.leftFirst;
+    if (leftCount == 0 || leftCount == node.triCount){
+        return;
+    } 
+    // create child nodes
+    int leftChildIdx = nodesUsed++;
+    int rightChildIdx = nodesUsed++;
+    bvhNode[leftChildIdx].leftFirst = node.leftFirst;
+    bvhNode[leftChildIdx].triCount = leftCount;
+    bvhNode[rightChildIdx].leftFirst = i;
+    bvhNode[rightChildIdx].triCount = node.triCount - leftCount;
+    node.leftFirst = leftChildIdx;
+    node.triCount = 0;
+    UpdateNodeBounds( leftChildIdx );
+    UpdateNodeBounds( rightChildIdx );
+
+    // recurse
+    FastSubdivide( leftChildIdx );
+    FastSubdivide( rightChildIdx );
+};
+
+template <typename Scalar>
+void BVH<Scalar>::FastBuild() {
+    for (uint i = 0; i < N; i++){
+        tri[i].centroid = (tri[i].vertex0 + tri[i].vertex1 + tri[i].vertex2) * (Scalar) 0.3333;
+    
+        triIdx[i] = i;
+    }
+
+    // assign all triangles to root node
+    BVHNode<Scalar>& root = bvhNode[0];
+    root.leftFirst= 0;
+    root.triCount = N;
+    UpdateNodeBounds( 0 );
+
+    // subdivide recursively
+    FastSubdivide( 0 );
 };
 
 template <typename Scalar>
