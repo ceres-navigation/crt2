@@ -4,6 +4,7 @@
 #include "primitives/ray.hpp"
 #include "primitives/aabb.hpp"
 #include "vector_math/vector.hpp"
+#include "vector_math/rotation.hpp"
 
 template <typename Scalar>
 BVH<Scalar>::BVH(){
@@ -185,6 +186,13 @@ void BVH<Scalar>::Build(int BINS) {
 
 template <typename Scalar>
 void BVH<Scalar>::Intersect( Ray<Scalar>& ray, const uint nodeIdx ) {
+    // backup ray and transform original
+    Ray<Scalar> backupRay = ray;
+    std::cout << ray.origin[0] << ", " << ray.origin[1] << ", " << ray.origin[2] << "\n";
+    std::cout << this->translation[0] << ", " << this->translation[1] << ", " << this->translation[2] << "\n";
+    ray.origin = ray.origin - this->translation;
+
+    // Trace the ray:
     BVHNode<Scalar>& node = bvhNode[nodeIdx];
     if (intersect_aabb( ray, node.aabbMin, node.aabbMax ) == std::numeric_limits<Scalar>::max()){
         return;
@@ -199,7 +207,31 @@ void BVH<Scalar>::Intersect( Ray<Scalar>& ray, const uint nodeIdx ) {
         Intersect( ray, node.leftFirst );
         Intersect( ray, node.leftFirst + 1 );
     }
+
+    // Restore ray origin and direction
+    backupRay.t = ray.t;
+    ray = backupRay;
 };
+
+// TODO REMOVE THIS!!!!
+template <typename Scalar>
+void BVH<Scalar>::SetTranslation( Vector3<Scalar>& translation ){
+
+    this->translation = translation;
+
+    std::cout << this->translation[0] << ", " << this->translation[1] << ", " << this->translation[2] << "\n";
+   
+
+    // calculate world-space bounds using the new matrix
+    Vector3<Scalar> bmin = bvhNode[0].aabbMin;
+    Vector3<Scalar> bmax = bvhNode[0].aabbMax;
+    
+    // Get the new bounds:
+    auto new_bmin = bmin + translation;
+    auto new_bmax = bmax + translation;
+    this->bounds.grow(new_bmin);
+    this->bounds.grow(new_bmax);
+}
 
 // Explicitly Instantiate floats and doubles:
 template class BVH<float>;

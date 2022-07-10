@@ -24,11 +24,13 @@ using Scalar = float;
 
 
 
-struct TLASNode {
+struct TLASNode
+{
     Vector3<Scalar> aabbMin;
-    uint leftBLAS;
+    uint leftRight; // 2x16 bits
     Vector3<Scalar> aabbMax;
-    uint isLeaf;
+    uint BLAS;
+    bool isLeaf() { return leftRight == 0; }
 };
 
 class TLAS {
@@ -54,49 +56,55 @@ TLAS::TLAS( BVH<Scalar>* bvhList, int N ) {
 
 void TLAS::Build() {
     // assign a TLASleaf node to each BLAS
-    tlasNode[2].leftBLAS = 0;
-    tlasNode[2].aabbMin = Vector3<Scalar>( -100 );
-    tlasNode[2].aabbMax = Vector3<Scalar>( 100 );
-    tlasNode[2].isLeaf = true;
-
-    tlasNode[3].leftBLAS = 1;
-    tlasNode[3].aabbMin = Vector3<Scalar>( -100 );
-    tlasNode[3].aabbMax = Vector3<Scalar>( 100 );
-    tlasNode[3].isLeaf = true;
-
-    // create a root node over the two leaf nodes
-    tlasNode[0].leftBLAS = 2;
-    tlasNode[0].aabbMin = Vector3<Scalar>( -100 );
-    tlasNode[0].aabbMax = Vector3<Scalar>( 100 );
-    tlasNode[0].isLeaf = false;
+    int nodeIdx[256], nodeIndices = blasCount;
+    nodesUsed = 1;
+    for (uint i = 0; i < blasCount; i++)
+    {
+        nodeIdx[i] = nodesUsed;
+        tlasNode[nodesUsed].aabbMin = blas[i].bounds.bmin;
+        tlasNode[nodesUsed].aabbMax = blas[i].bounds.bmax;
+        tlasNode[nodesUsed].BLAS = i;
+        tlasNode[nodesUsed++].leftRight = 0; // makes it a leaf
+    }
 }
 
 void TLAS::Intersect( Ray<Scalar>& ray ) {
-    TLASNode* node = &tlasNode[0], *stack[64];
-    uint stackPtr = 0;
-    while (1)
-    {
-        if (node->isLeaf)
-        {
-            blas[node->leftBLAS].Intersect( ray, 0);
-            if (stackPtr == 0) break; else node = stack[--stackPtr];
-            continue;
-        }
-        TLASNode* child1 = &tlasNode[node->leftBLAS];
-        TLASNode* child2 = &tlasNode[node->leftBLAS + 1];
-        float dist1 = intersect_aabb( ray, child1->aabbMin, child1->aabbMax );
-        float dist2 = intersect_aabb( ray, child2->aabbMin, child2->aabbMax );
-        if (dist1 > dist2) { std::swap( dist1, dist2 ); std::swap( child1, child2 ); }
-        if (dist1 == std::numeric_limits<Scalar>::max())
-        {
-            if (stackPtr == 0) break; else node = stack[--stackPtr];
-        }
-        else
-        {
-            node = child1;
-            if (dist2 != std::numeric_limits<Scalar>::max()) stack[stackPtr++] = child2;
-        }
-    }
+	TLASNode* node = &tlasNode[0], * stack[64];
+	uint stackPtr = 0;
+	while (1)
+	{
+		// std::cerr << "Testing TLAS nodes " << (node->leftRight & 0xffff) << " and " << (node->leftRight >> 16) << std::endl;
+		if (node->isLeaf())
+		{
+			// std::cerr << "Hit leaf" << std::endl;
+			blas[node->BLAS].Intersect( ray , 0 );
+			if (stackPtr == 0) break; else node = stack[--stackPtr];
+			continue;
+		}
+		TLASNode* child1 = &tlasNode[node->leftRight & 0xffff];
+		TLASNode* child2 = &tlasNode[node->leftRight >> 16];
+
+		Scalar dist1 = intersect_aabb( ray, child1->aabbMin, child1->aabbMax );
+		Scalar dist2 = intersect_aabb( ray, child2->aabbMin, child2->aabbMax );
+
+		// std::cerr << dist1 << "\t" << 
+		// 	child1->aabbMin[0] << ", " << child1->aabbMin[1] << ", " << child1->aabbMin[2] << "; " <<
+		// 	child1->aabbMax[0] << ", " << child1->aabbMax[1] << ", " << child1->aabbMax[2] << std::endl;
+		// std::cerr << dist2 << "\t" << 
+		// 	child2->aabbMin[0] << ", " << child2->aabbMin[1] << ", " << child2->aabbMin[2] << "; " <<
+		// 	child2->aabbMax[0] << ", " << child2->aabbMax[1] << ", " << child2->aabbMax[2] << std::endl;
+
+		if (dist1 > dist2) { std::swap( dist1, dist2 ); std::swap( child1, child2 ); }
+		if (dist1 == 1e30f)
+		{
+			if (stackPtr == 0) break; else node = stack[--stackPtr];
+		}
+		else
+		{
+			node = child1;
+			if (dist2 != 1e30f) stack[stackPtr++] = child2;
+		}
+	}
 }
 
 
@@ -130,7 +138,9 @@ int main(){
     // bvh[1] = BVH( "assets/armadillo.tri", 30000 );
     BVH<Scalar>* bvhs = new BVH<Scalar>[2];
     bvhs[0] = *geometries[0].bvh;
+    bvhs[0].SetTranslation(geometries[0].position);
     bvhs[1] = *geometries[1].bvh;
+    bvhs[1].SetTranslation(geometries[1].position);
     auto tlas = TLAS( bvhs, 2 );
 
     // Build BVH:

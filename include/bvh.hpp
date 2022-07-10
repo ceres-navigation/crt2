@@ -8,6 +8,7 @@
 #include "primitives/ray.hpp"
 #include "primitives/aabb.hpp"
 #include "vector_math/vector.hpp"
+#include "vector_math/rotation.hpp"
 
 template <typename Scalar>
 struct BVHNode {
@@ -29,6 +30,10 @@ class BVH{
         uint N;
         uint nodesUsed;
 
+        // TODO: REMOVE THIS!!!!
+        Vector3<Scalar> translation;
+        AABB<Scalar> bounds; // in world space
+
         BVHNode<Scalar>* bvhNode = nullptr;
         uint* triIdx = nullptr;
 
@@ -37,6 +42,8 @@ class BVH{
         BVH(Triangle<Scalar>* triangles, uint num_triangles);
 
         ~BVH();
+
+        void SetTranslation( Vector3<Scalar>& translation );
 
         void UpdateNodeBounds( uint nodeIdx );
 
