@@ -31,7 +31,7 @@ class BVH{
         uint nodesUsed;
 
         // TODO: REMOVE THIS!!!!
-        Vector3<Scalar> translation;
+        Vector3<Scalar> translation = Vector3<Scalar>(0);
         AABB<Scalar> bounds; // in world space
 
         BVHNode<Scalar>* bvhNode = nullptr;
@@ -54,7 +54,8 @@ class BVH{
         void Build(int BINS=8);
 
         // Function for ray traversal:
-        void Intersect( Ray<Scalar>& ray, const uint nodeIdx );
+        void Intersect( Ray<Scalar>& ray );
+        void IntersectInner( Ray<Scalar>& ray, const uint nodeIdx );
 };
 
 #endif

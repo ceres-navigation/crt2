@@ -185,13 +185,7 @@ void BVH<Scalar>::Build(int BINS) {
 };
 
 template <typename Scalar>
-void BVH<Scalar>::Intersect( Ray<Scalar>& ray, const uint nodeIdx ) {
-    // backup ray and transform original
-    Ray<Scalar> backupRay = ray;
-    std::cout << ray.origin[0] << ", " << ray.origin[1] << ", " << ray.origin[2] << "\n";
-    std::cout << this->translation[0] << ", " << this->translation[1] << ", " << this->translation[2] << "\n";
-    ray.origin = ray.origin - this->translation;
-
+void BVH<Scalar>::IntersectInner( Ray<Scalar>& ray, const uint nodeIdx ) {
     // Trace the ray:
     BVHNode<Scalar>& node = bvhNode[nodeIdx];
     if (intersect_aabb( ray, node.aabbMin, node.aabbMax ) == std::numeric_limits<Scalar>::max()){
@@ -204,23 +198,36 @@ void BVH<Scalar>::Intersect( Ray<Scalar>& ray, const uint nodeIdx ) {
         }
     }
     else {
-        Intersect( ray, node.leftFirst );
-        Intersect( ray, node.leftFirst + 1 );
+        IntersectInner( ray, node.leftFirst );
+        IntersectInner( ray, node.leftFirst + 1 );
+    }
+};
+
+template <typename Scalar>
+void BVH<Scalar>::Intersect( Ray<Scalar>& ray ) {
+    // backup ray and transform original
+    Ray<Scalar> backupRay = ray;
+
+    // Transform the ray:
+    ray.origin = ray.origin -this->translation;
+
+    // Trace the ray:
+    BVHNode<Scalar>& node = bvhNode[0];
+    if (intersect_aabb( ray, node.aabbMin, node.aabbMax ) != std::numeric_limits<Scalar>::max()){
+        IntersectInner( ray, node.leftFirst );
+        IntersectInner( ray, node.leftFirst + 1 );
     }
 
     // Restore ray origin and direction
     backupRay.t = ray.t;
+    backupRay.hit = ray.hit;
     ray = backupRay;
 };
 
 // TODO REMOVE THIS!!!!
 template <typename Scalar>
 void BVH<Scalar>::SetTranslation( Vector3<Scalar>& translation ){
-
     this->translation = translation;
-
-    std::cout << this->translation[0] << ", " << this->translation[1] << ", " << this->translation[2] << "\n";
-   
 
     // calculate world-space bounds using the new matrix
     Vector3<Scalar> bmin = bvhNode[0].aabbMin;

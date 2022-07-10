@@ -135,7 +135,7 @@ void Geometry<Scalar>::build_bvh(int BINS){
 
 template <typename Scalar>
 void Geometry<Scalar>::intersect(Ray<Scalar> &ray){
-    this->bvh->Intersect(ray, 0);
+    this->bvh->Intersect(ray);
 }
 
 template <typename Scalar>

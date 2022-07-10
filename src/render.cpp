@@ -22,8 +22,6 @@
 
 using Scalar = float;
 
-
-
 struct TLASNode
 {
     Vector3<Scalar> aabbMin;
@@ -39,7 +37,7 @@ class TLAS {
         TLAS( BVH<Scalar>* bvhList, int N );
         void Build();
         void Intersect( Ray<Scalar>& ray );
-    private:
+    // private:
         TLASNode* tlasNode = 0;
         BVH<Scalar>* blas = 0;
         uint nodesUsed, blasCount;
@@ -77,7 +75,7 @@ void TLAS::Intersect( Ray<Scalar>& ray ) {
 		if (node->isLeaf())
 		{
 			// std::cerr << "Hit leaf" << std::endl;
-			blas[node->BLAS].Intersect( ray , 0 );
+			blas[node->BLAS].Intersect( ray );
 			if (stackPtr == 0) break; else node = stack[--stackPtr];
 			continue;
 		}
@@ -86,13 +84,6 @@ void TLAS::Intersect( Ray<Scalar>& ray ) {
 
 		Scalar dist1 = intersect_aabb( ray, child1->aabbMin, child1->aabbMax );
 		Scalar dist2 = intersect_aabb( ray, child2->aabbMin, child2->aabbMax );
-
-		// std::cerr << dist1 << "\t" << 
-		// 	child1->aabbMin[0] << ", " << child1->aabbMin[1] << ", " << child1->aabbMin[2] << "; " <<
-		// 	child1->aabbMax[0] << ", " << child1->aabbMax[1] << ", " << child1->aabbMax[2] << std::endl;
-		// std::cerr << dist2 << "\t" << 
-		// 	child2->aabbMin[0] << ", " << child2->aabbMin[1] << ", " << child2->aabbMin[2] << "; " <<
-		// 	child2->aabbMax[0] << ", " << child2->aabbMax[1] << ", " << child2->aabbMax[2] << std::endl;
 
 		if (dist1 > dist2) { std::swap( dist1, dist2 ); std::swap( child1, child2 ); }
 		if (dist1 == 1e30f)
@@ -111,12 +102,13 @@ void TLAS::Intersect( Ray<Scalar>& ray ) {
 int main(){
     // Define sensor:
     Scalar resolution[2] = {640,640};
+    // Scalar resolution[2] = {100,100};
     Scalar size[2] = {30,30};
     SimpleSensor<Scalar> sensor(resolution, size);
 
     // Define camera:
     SimpleCamera<Scalar> camera(30, sensor, true);
-    camera.set_position(0,0,-8);
+    camera.set_position(0,0,-16);
 
     // Define a simple light:
     PointLight<Scalar> light(1);
@@ -124,18 +116,17 @@ int main(){
     // Load geometry:
     Geometry<Scalar>* geometries = new Geometry<Scalar>[4];
     geometries[0].read_obj("../suzanne.obj");
-    geometries[0].set_position(Vector3<Scalar>(0,1,0));
+    geometries[0].set_position(Vector3<Scalar>(0,-5,0));
 
     geometries[1].read_obj("../suzanne.obj");
-    geometries[1].set_position(Vector3<Scalar>(0,-1,0));
+    geometries[1].set_position(Vector3<Scalar>(0,-4,0));
 
     geometries[0].build_bvh();
     geometries[1].build_bvh();
 
     // Create the scene:
     // Scene<Scalar> scene(geometries, 4);
-    // bvh[0] = BVH( "assets/armadillo.tri", 30000 );
-    // bvh[1] = BVH( "assets/armadillo.tri", 30000 );
+
     BVH<Scalar>* bvhs = new BVH<Scalar>[2];
     bvhs[0] = *geometries[0].bvh;
     bvhs[0].SetTranslation(geometries[0].position);
@@ -164,9 +155,18 @@ int main(){
                 for (int y = 0; y < tile_size; y++){
                     auto ray = camera.pixel_to_ray(u+x,v+y);
                     // scene.intersect( ray );
-                    tlas.Intersect( ray );
+                    // tlas.Intersect( ray );
 
-                    // Format an output image:
+                    // tlas.blas[0].Intersect( ray, 0 );
+                    // tlas.blas[1].Intersect( ray, 0 );
+
+                    // std::cout << ray.origin[1] << "\n";
+                    bvhs[0].Intersect( ray );
+                    // std::cout << ray.origin[1] << "\n";
+                    bvhs[1].Intersect( ray );
+                    // std::cout << ray.origin[1] << "\n";
+                    // exit(0);
+
                     if (ray.hit.t < std::numeric_limits<Scalar>::max()) {
                         image[u+x][v+y] = 255;
                     }

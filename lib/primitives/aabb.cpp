@@ -23,6 +23,7 @@ Scalar AABB<Scalar>::area() {
 
 template <typename Scalar>
 Scalar intersect_aabb( const Ray<Scalar>& ray, const Vector3<Scalar> bmin, const Vector3<Scalar> bmax ) {
+    // std::cout << ray.origin[0] << ", " << ray.origin[1] << ", " << ray.origin[2] << "\n";
     Scalar tx1 = (bmin[0] - ray.origin[0]) * ray.recip_direction[0];
     Scalar tx2 = (bmax[0] - ray.origin[0]) * ray.recip_direction[0];
     Scalar tmin = std::min( tx1, tx2 );
@@ -37,6 +38,7 @@ Scalar intersect_aabb( const Ray<Scalar>& ray, const Vector3<Scalar> bmin, const
     Scalar tz2 = (bmax[2] - ray.origin[2]) * ray.recip_direction[2];
     tmin = std::max( tmin, std::min( tz1, tz2 ) );
     tmax = std::min( tmax, std::max( tz1, tz2 ) );
+
     if (tmax >= tmin && tmin < ray.hit.t && tmax > 0) {
         return tmin;
     } 

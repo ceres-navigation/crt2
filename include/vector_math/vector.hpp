@@ -151,6 +151,10 @@ inline Vec<Scalar, 3> cross(const Vec<Scalar, 3>& a, const Vec<Scalar, 3>& b) {
     });
 }
 
+template <typename Scalar>
+inline Vec<Scalar, 3> translate(const Vec<Scalar, 3>& a, const Vec<Scalar, 3>& b){
+    return Vec<Scalar, 3>(a[0]+b[0], a[1]+b[1], a[2]+b[2]);
+}
 
 template <typename Scalar>
 using Vector3 = Vec<Scalar, 3>;
