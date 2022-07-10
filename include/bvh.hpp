@@ -29,8 +29,8 @@ class BVH{
         uint N;
         uint nodesUsed;
 
-        BVHNode<Scalar>* bvhNode;
-        uint* triIdx;
+        BVHNode<Scalar>* bvhNode = nullptr;
+        uint* triIdx = nullptr;
 
         BVH();
 
@@ -45,10 +45,6 @@ class BVH{
         Scalar CalculateNodeCost( BVHNode<Scalar>& node );
         void Subdivide( uint nodeIdx, int BINS);
         void Build(int BINS=8);
-
-        // Functions for fast BVH building:
-        void FastSubdivide( uint nodeIdx );
-        void FastBuild();
 
         // Function for ray traversal:
         void Intersect( Ray<Scalar>& ray, const uint nodeIdx );

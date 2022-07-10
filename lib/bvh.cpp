@@ -1,4 +1,4 @@
-#include "acceleration/bvh.hpp"
+#include "bvh.hpp"
 
 #include "primitives/triangle.hpp"
 #include "primitives/ray.hpp"
@@ -7,9 +7,6 @@
 
 template <typename Scalar>
 BVH<Scalar>::BVH(){
-    this->tri = nullptr;
-    this->bvhNode = nullptr;
-    this->triIdx = nullptr;
 };
 
 template <typename Scalar>
@@ -184,79 +181,6 @@ void BVH<Scalar>::Build(int BINS) {
 
     // subdivide recursively
     Subdivide( 0, BINS);
-};
-
-template <typename Scalar>
-void BVH<Scalar>::FastSubdivide(uint nodeIdx){
-    // terminate recursion
-    BVHNode<Scalar>& node = bvhNode[nodeIdx];
-    if (node.triCount <= 2){
-        return;
-    } 
-
-    // determine split axis and position
-    int axis;
-    Scalar splitPos;
-    Vector3<Scalar> extent = node.aabbMax - node.aabbMin;
-    axis = 0;
-    if (extent[1] > extent[0]){
-        axis = 1;
-    }
-    if (extent[2] > extent[axis]){
-        axis = 2;
-    }
-    splitPos = node.aabbMin[axis] + extent[axis] * (Scalar) 0.5;
-
-    // in-place partition
-    int i = node.leftFirst;
-    int j = i + node.triCount - 1;
-    while (i <= j) {
-        if (tri[triIdx[i]].centroid[axis] < splitPos) {
-            i++;
-        }
-        else {
-            std::swap( triIdx[i], triIdx[j--] );
-        }
-    }
-    
-    // abort split if one of the sides is empty
-    uint leftCount = i - node.leftFirst;
-    if (leftCount == 0 || leftCount == node.triCount){
-        return;
-    } 
-    // create child nodes
-    int leftChildIdx = nodesUsed++;
-    int rightChildIdx = nodesUsed++;
-    bvhNode[leftChildIdx].leftFirst = node.leftFirst;
-    bvhNode[leftChildIdx].triCount = leftCount;
-    bvhNode[rightChildIdx].leftFirst = i;
-    bvhNode[rightChildIdx].triCount = node.triCount - leftCount;
-    node.leftFirst = leftChildIdx;
-    node.triCount = 0;
-    UpdateNodeBounds( leftChildIdx );
-    UpdateNodeBounds( rightChildIdx );
-
-    // recurse
-    FastSubdivide( leftChildIdx );
-    FastSubdivide( rightChildIdx );
-};
-
-template <typename Scalar>
-void BVH<Scalar>::FastBuild() {
-    for (uint i = 0; i < N; i++){
-        tri[i].centroid = (tri[i].vertex0 + tri[i].vertex1 + tri[i].vertex2) * (Scalar) 0.3333;
-    
-        triIdx[i] = i;
-    }
-
-    // assign all triangles to root node
-    BVHNode<Scalar>& root = bvhNode[0];
-    root.leftFirst= 0;
-    root.triCount = N;
-    UpdateNodeBounds( 0 );
-
-    // subdivide recursively
-    FastSubdivide( 0 );
 };
 
 template <typename Scalar>

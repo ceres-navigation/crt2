@@ -6,10 +6,12 @@ add_library(
     scene.cpp
     geometry.cpp
     rigid_body.cpp
-
-    acceleration/bvh.cpp
+    bvh.cpp
+    group.cpp
 
     cameras/simple_camera.cpp
+
+    graph_nodes/blas_node.cpp
 
     lights/point_light.cpp
 

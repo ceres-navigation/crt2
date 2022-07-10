@@ -14,8 +14,6 @@
 #include "primitives/triangle.hpp"
 #include "primitives/aabb.hpp"
 
-#include "acceleration/bvh.hpp"
-
 #include "geometry.hpp"
 #include "scene.hpp"
 
@@ -23,6 +21,84 @@
 #include <vector>
 
 using Scalar = float;
+
+
+
+struct TLASNode {
+    Vector3<Scalar> aabbMin;
+    uint leftBLAS;
+    Vector3<Scalar> aabbMax;
+    uint isLeaf;
+};
+
+class TLAS {
+    public:
+        TLAS() = default;
+        TLAS( BVH<Scalar>* bvhList, int N );
+        void Build();
+        void Intersect( Ray<Scalar>& ray );
+    private:
+        TLASNode* tlasNode = 0;
+        BVH<Scalar>* blas = 0;
+        uint nodesUsed, blasCount;
+};
+
+TLAS::TLAS( BVH<Scalar>* bvhList, int N ) {
+    // copy a pointer to the array of bottom level accstructs
+    blas = bvhList;
+    blasCount = N;
+    // allocate TLAS nodes
+    tlasNode = new TLASNode[2*N];
+    nodesUsed = 2;
+}
+
+void TLAS::Build() {
+    // assign a TLASleaf node to each BLAS
+    tlasNode[2].leftBLAS = 0;
+    tlasNode[2].aabbMin = Vector3<Scalar>( -100 );
+    tlasNode[2].aabbMax = Vector3<Scalar>( 100 );
+    tlasNode[2].isLeaf = true;
+
+    tlasNode[3].leftBLAS = 1;
+    tlasNode[3].aabbMin = Vector3<Scalar>( -100 );
+    tlasNode[3].aabbMax = Vector3<Scalar>( 100 );
+    tlasNode[3].isLeaf = true;
+
+    // create a root node over the two leaf nodes
+    tlasNode[0].leftBLAS = 2;
+    tlasNode[0].aabbMin = Vector3<Scalar>( -100 );
+    tlasNode[0].aabbMax = Vector3<Scalar>( 100 );
+    tlasNode[0].isLeaf = false;
+}
+
+void TLAS::Intersect( Ray<Scalar>& ray ) {
+    TLASNode* node = &tlasNode[0], *stack[64];
+    uint stackPtr = 0;
+    while (1)
+    {
+        if (node->isLeaf)
+        {
+            blas[node->leftBLAS].Intersect( ray, 0);
+            if (stackPtr == 0) break; else node = stack[--stackPtr];
+            continue;
+        }
+        TLASNode* child1 = &tlasNode[node->leftBLAS];
+        TLASNode* child2 = &tlasNode[node->leftBLAS + 1];
+        float dist1 = intersect_aabb( ray, child1->aabbMin, child1->aabbMax );
+        float dist2 = intersect_aabb( ray, child2->aabbMin, child2->aabbMax );
+        if (dist1 > dist2) { std::swap( dist1, dist2 ); std::swap( child1, child2 ); }
+        if (dist1 == std::numeric_limits<Scalar>::max())
+        {
+            if (stackPtr == 0) break; else node = stack[--stackPtr];
+        }
+        else
+        {
+            node = child1;
+            if (dist2 != std::numeric_limits<Scalar>::max()) stack[stackPtr++] = child2;
+        }
+    }
+}
+
 
 int main(){
     // Define sensor:
@@ -32,24 +108,37 @@ int main(){
 
     // Define camera:
     SimpleCamera<Scalar> camera(30, sensor, true);
-    camera.set_position(0,0,-3);
+    camera.set_position(0,0,-8);
 
     // Define a simple light:
     PointLight<Scalar> light(1);
 
     // Load geometry:
-    Geometry<Scalar>* geometries = new Geometry<Scalar>[3];
+    Geometry<Scalar>* geometries = new Geometry<Scalar>[4];
     geometries[0].read_obj("../suzanne.obj");
+    geometries[0].set_position(Vector3<Scalar>(0,1,0));
+
     geometries[1].read_obj("../suzanne.obj");
-    geometries[2].read_obj("../suzanne.obj");
+    geometries[1].set_position(Vector3<Scalar>(0,-1,0));
+
+    geometries[0].build_bvh();
+    geometries[1].build_bvh();
 
     // Create the scene:
-    Scene<Scalar> scene(geometries, 3);
+    // Scene<Scalar> scene(geometries, 4);
+    // bvh[0] = BVH( "assets/armadillo.tri", 30000 );
+    // bvh[1] = BVH( "assets/armadillo.tri", 30000 );
+    BVH<Scalar>* bvhs = new BVH<Scalar>[2];
+    bvhs[0] = *geometries[0].bvh;
+    bvhs[1] = *geometries[1].bvh;
+    auto tlas = TLAS( bvhs, 2 );
 
     // Build BVH:
     std::cout << "Building BVH...\n";
     auto start = std::chrono::high_resolution_clock::now();
-    scene.build_bvh();
+    // scene.build_bvh();
+    tlas.Build();
+
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
     std::cout << "    BVH built in " << duration.count() << " milliseconds\n";
@@ -64,7 +153,8 @@ int main(){
             for (int x = 0; x < tile_size; x++){
                 for (int y = 0; y < tile_size; y++){
                     auto ray = camera.pixel_to_ray(u+x,v+y);
-                    scene.intersect( ray );
+                    // scene.intersect( ray );
+                    tlas.Intersect( ray );
 
                     // Format an output image:
                     if (ray.hit.t < std::numeric_limits<Scalar>::max()) {

@@ -16,29 +16,26 @@
 #include <tiny_obj_loader.h>
 
 #include "geometry.hpp"
-#include "acceleration/bvh.hpp"
+#include "bvh.hpp"
 
 #include "primitives/triangle.hpp"
 #include "primitives/ray.hpp"
 
 template <typename Scalar>
 Geometry<Scalar>::Geometry(){
-    this->name = "Geometry Instance";
-    this->bvh = nullptr;
-    this->triangles = nullptr;
-}
-
-template <typename Scalar>
-Geometry<Scalar>::Geometry(std::string name){
-    this->name = name;
-    this->bvh = nullptr;
-    this->triangles = nullptr;
-}
+};
 
 template <typename Scalar>
 Geometry<Scalar>::~Geometry(){
     delete this->triangles;
+    delete this->triangle_data;
     delete this->bvh;
+}
+
+template <typename Scalar>
+void Geometry<Scalar>::set_name(std::string new_name){
+    this->name = new_name;
+    this->name_set = true;
 }
 
 template <typename Scalar>
@@ -99,6 +96,11 @@ void Geometry<Scalar>::read_obj(const char* file_path){
 
     // Get the triangles:
     this->construct_triangles();
+
+    // Set the name if none has been given:
+    if (!this->name_set){
+        this->name = "FIX THIS";
+    }
 };
 
 template <typename Scalar>
@@ -129,12 +131,6 @@ template <typename Scalar>
 void Geometry<Scalar>::build_bvh(int BINS){
     this->bvh = new BVH<Scalar>(this->triangles, this->num_triangles);
     this->bvh->Build(BINS);
-}
-
-template <typename Scalar>
-void Geometry<Scalar>::fast_build_bvh(){
-    this->bvh = new BVH<Scalar>(this->triangles, this->num_triangles);
-    this->bvh->FastBuild();
 }
 
 template <typename Scalar>

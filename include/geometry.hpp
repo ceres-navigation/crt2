@@ -6,10 +6,12 @@
 #include "primitives/ray.hpp"
 #include <stdint.h>
 
-#include "acceleration/bvh.hpp"
+#include "rigid_body.hpp"
+
+#include "bvh.hpp"
 
 template <typename Scalar>
-class Geometry {
+class Geometry : public RigidBody<Scalar>{
     public:
         // BINARY HEADER FORMAT:
         // {char magic[6], uint32_t compressed_v_size, uint32_t compressed_f_size, 
@@ -17,9 +19,10 @@ class Geometry {
         // Define the magic phrase at start of the file:
         const char* magic = "CRTOBJ";
         const int magic_length = 6;
-        BVH<Scalar>* bvh;
+        BVH<Scalar>* bvh = nullptr;
 
         std::string name;
+        bool name_set = false;
 
         // Definition of the geomtry to be stored:
         std::vector<std::vector<Scalar>> vertices; // TODO: REMOVE THIS!!!  Everything in triangle form
@@ -27,19 +30,18 @@ class Geometry {
 
         // Triangle defintions:
         uint32_t num_triangles = 0;
-        Triangle<Scalar> *triangles;
-        TriangleData<Scalar> *triangle_data;
+        Triangle<Scalar> *triangles = nullptr;
+        TriangleData<Scalar> *triangle_data = nullptr;
 
         Geometry();
 
-        Geometry(std::string name);
-
         ~Geometry();
+
+        void set_name(std::string name);
 
         void read_obj(const char* file_path);
 
         void build_bvh(int BINS=8);
-        void fast_build_bvh();
 
         void intersect(Ray<Scalar> &ray);
 
