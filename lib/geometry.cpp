@@ -26,17 +26,115 @@ Geometry<Scalar>::Geometry(){
 };
 
 template <typename Scalar>
+Geometry<Scalar>::Geometry(const char* file_path, std::string file_type){
+    if (file_type == "obj"){
+        read_obj(file_path);
+    }
+    else if (file_type == "binary"){
+        // read_binary(file_path);
+        std::cout << "BINARY IS NOT YET IMPLEMENTED AND TEST!\n";
+        exit(1);
+    }
+    else {
+        std::cout << file_type << "is INVALID.  Must be 'obj' or 'binary'.\n";
+        exit(2);
+    }
+
+    this->construct_triangles();
+
+    this->build_bvh();
+};
+
+template <typename Scalar>
 Geometry<Scalar>::~Geometry(){
     delete this->triangles;
     delete this->triangle_data;
     delete this->bvh;
+};
+
+template <typename Scalar>
+void Geometry<Scalar>::intersect(Ray<Scalar> &ray){
+    this->bvh->Intersect(ray);
 }
 
 template <typename Scalar>
-void Geometry<Scalar>::set_name(std::string new_name){
-    this->name = new_name;
-    this->name_set = true;
+void Geometry<Scalar>::set_scale(Scalar new_scale){
+    this->scale = new_scale;
+
+    this->bvh->scale = new_scale;
+    this->bvh->transform_changed = true;
+    this->bvh->UpdateBounds();
+};
+template <typename Scalar>
+void Geometry<Scalar>::set_position(Vector3<Scalar> new_position) {
+    this->position = new_position;
+
+    this->bvh->position = new_position;
+    this->bvh->transform_changed = true;
+    this->bvh->transform_nodes = new TransformNode<Scalar>(new_position);
+    this->bvh->num_transformations = 1;
+    this->bvh->UpdateBounds();
+};
+template <typename Scalar>
+void Geometry<Scalar>::set_rotation(Rotation<Scalar> new_rotation){
+    this->rotation = new_rotation;
+
+    this->bvh->rotation = new_rotation;
+    this->bvh->transform_changed = true;
+    this->bvh->UpdateBounds();
+};
+template <typename Scalar>
+void Geometry<Scalar>::set_pose(Vector3<Scalar> new_position, Rotation<Scalar> new_rotation){
+    this->position = new_position;
+    this->rotation = new_rotation;
+
+    this->bvh->position = new_position;
+    this->bvh->rotation = new_rotation;
+    this->bvh->transform_changed = true;
+    this->bvh->UpdateBounds();
+};
+template <typename Scalar>
+void Geometry<Scalar>::set_transform(Scalar new_scale, Vector3<Scalar> new_position, Rotation<Scalar> new_rotation){
+    this->scale    = new_scale;
+    this->position = new_position;
+    this->rotation = new_rotation;
+
+    this->bvh->scale    = new_scale;
+    this->bvh->position = new_position;
+    this->bvh->rotation = new_rotation;
+    this->bvh->transform_changed = true;
+    this->bvh->UpdateBounds();
+};
+
+template <typename Scalar>
+void Geometry<Scalar>::build_bvh(int BINS){
+    this->bvh = new BVH<Scalar>(this->triangles, this->num_triangles);
+    this->bvh->Build(BINS);
 }
+
+template <typename Scalar>
+void Geometry<Scalar>::construct_triangles(){
+    // Get the number of triangles:
+    this->num_triangles = this->faces.size();
+
+    // Allocate triangles on heap:
+    this->triangles = new Triangle<Scalar>[this->num_triangles];
+
+    // Populate triangles with the data read in from a file:
+    for (uint32_t i = 0; i < num_triangles; i++){
+        auto face_def = this->faces[i];
+
+        auto v0 = Vector3<Scalar>(this->vertices[face_def[0]][0], this->vertices[face_def[0]][1], this->vertices[face_def[0]][2]);
+        auto v1 = Vector3<Scalar>(this->vertices[face_def[1]][0], this->vertices[face_def[1]][1], this->vertices[face_def[1]][2]);
+        auto v2 = Vector3<Scalar>(this->vertices[face_def[2]][0], this->vertices[face_def[2]][1], this->vertices[face_def[2]][2]);
+
+        this->triangles[i].vertex0 = v0;
+        this->triangles[i].vertex1 = v1;
+        this->triangles[i].vertex2 = v2;
+
+        // TODO: Include additional triangle data...
+    }
+};
 
 template <typename Scalar>
 void Geometry<Scalar>::read_obj(const char* file_path){
@@ -93,50 +191,7 @@ void Geometry<Scalar>::read_obj(const char* file_path){
             shapes[s].mesh.material_ids[f];
         }
     }
-
-    // Get the triangles:
-    this->construct_triangles();
-
-    // Set the name if none has been given:
-    if (!this->name_set){
-        this->name = "FIX THIS";
-    }
 };
-
-template <typename Scalar>
-void Geometry<Scalar>::construct_triangles(){
-    // Get the number of triangles:
-    this->num_triangles = this->faces.size();
-
-    // Allocate triangles on heap:
-    this->triangles = new Triangle<Scalar>[this->num_triangles];
-
-    // Populate triangles with the data read in from a file:
-    for (uint32_t i = 0; i < num_triangles; i++){
-        auto face_def = this->faces[i];
-
-        auto v0 = Vector3<Scalar>(this->vertices[face_def[0]][0], this->vertices[face_def[0]][1], this->vertices[face_def[0]][2]);
-        auto v1 = Vector3<Scalar>(this->vertices[face_def[1]][0], this->vertices[face_def[1]][1], this->vertices[face_def[1]][2]);
-        auto v2 = Vector3<Scalar>(this->vertices[face_def[2]][0], this->vertices[face_def[2]][1], this->vertices[face_def[2]][2]);
-
-        this->triangles[i].vertex0 = v0;
-        this->triangles[i].vertex1 = v1;
-        this->triangles[i].vertex2 = v2;
-
-        // TODO: Include additional triangle data...
-    }
-};
-
-template <typename Scalar>
-void Geometry<Scalar>::build_bvh(int BINS){
-    this->bvh = new BVH<Scalar>(this->triangles, this->num_triangles);
-    this->bvh->Build(BINS);
-}
-
-template <typename Scalar>
-void Geometry<Scalar>::intersect(Ray<Scalar> &ray){
-    this->bvh->Intersect(ray);
-}
 
 template <typename Scalar>
 void Geometry<Scalar>::read_binary(const char* file_path){
@@ -266,7 +321,7 @@ void Geometry<Scalar>::write_binary(const char* file_path){
 
     // Write uncompressed header to file:
     FILE* file = fopen(file_path, "wb");
-    fwrite(magic, sizeof(char), magic_length, file);
+    fwrite(magic.c_str(), sizeof(char), magic_length, file);
     fwrite(&compressed_v_size, sizeof(uint32_t), 1, file);
     fwrite(&compressed_f_size, sizeof(uint32_t), 1, file);
     fwrite(&num_v, sizeof(uint32_t), 1, file);
@@ -283,6 +338,7 @@ void Geometry<Scalar>::write_binary(const char* file_path){
     delete [] compressed_v;
     delete [] compressed_f;
 };
+
 
 
 // Explicitly Instantiate floats and doubles:

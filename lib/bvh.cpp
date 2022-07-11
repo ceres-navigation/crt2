@@ -26,12 +26,26 @@ BVH<Scalar>::~BVH(){
 };
 
 template <typename Scalar>
+void BVH<Scalar>::UpdateBounds(){
+    Vector3<Scalar> bmin = this->bounds.bmin;
+    Vector3<Scalar> bmax = this->bounds.bmax;
+    // Apply all transformations:
+    for (int i = 0; i < num_transformations; i++){
+        transform_nodes[i].apply(bmin);
+        transform_nodes[i].apply(bmax);
+    }
+
+    // TODO Just replace the AABB rather than using "grow":
+    this->bounds.bmin = bmin;
+    this->bounds.bmax = bmax;
+};
+
+template <typename Scalar>
 void BVH<Scalar>::UpdateNodeBounds( uint nodeIdx ) {
     BVHNode<Scalar>& node = bvhNode[nodeIdx];
     node.aabbMin = Vector3<Scalar>(  std::numeric_limits<Scalar>::max() );
     node.aabbMax = Vector3<Scalar>( -std::numeric_limits<Scalar>::max() );
-    for (uint first = node.leftFirst, i = 0; i < node.triCount; i++)
-    {
+    for (uint first = node.leftFirst, i = 0; i < node.triCount; i++) {
         uint leafTriIdx = triIdx[first + i];
         Triangle<Scalar>& leafTri = tri[leafTriIdx];
         node.aabbMin = min( node.aabbMin, leafTri.vertex0 ),
@@ -180,12 +194,15 @@ void BVH<Scalar>::Build(int BINS) {
     root.triCount = N;
     UpdateNodeBounds( 0 );
 
+    bounds.grow(bvhNode[0].aabbMin);
+    bounds.grow(bvhNode[0].aabbMax);
+
     // subdivide recursively
     Subdivide( 0, BINS);
 };
 
 template <typename Scalar>
-void BVH<Scalar>::IntersectInner( Ray<Scalar>& ray, const uint nodeIdx ) {
+void BVH<Scalar>::InnerIntersect( Ray<Scalar>& ray, const uint nodeIdx ) {
     // Trace the ray:
     BVHNode<Scalar>& node = bvhNode[nodeIdx];
     if (intersect_aabb( ray, node.aabbMin, node.aabbMax ) == std::numeric_limits<Scalar>::max()){
@@ -198,46 +215,36 @@ void BVH<Scalar>::IntersectInner( Ray<Scalar>& ray, const uint nodeIdx ) {
         }
     }
     else {
-        IntersectInner( ray, node.leftFirst );
-        IntersectInner( ray, node.leftFirst + 1 );
+        InnerIntersect( ray, node.leftFirst );
+        InnerIntersect( ray, node.leftFirst + 1 );
     }
 };
 
 template <typename Scalar>
-void BVH<Scalar>::Intersect( Ray<Scalar>& ray ) {
-    // backup ray and transform original
-    Ray<Scalar> backupRay = ray;
-
-    // Transform the ray:
-    ray.origin = ray.origin -this->translation;
+void BVH<Scalar>::Intersect( Ray<Scalar>& ray, const uint nodeIdx ) {
+    // Apply the transformations:
+    Ray<Scalar> backup_ray = ray;
+    for (int i = 0; i < num_transformations; i++){
+        transform_nodes[i].invert(ray);
+    }
 
     // Trace the ray:
-    BVHNode<Scalar>& node = bvhNode[0];
+    BVHNode<Scalar>& node = bvhNode[nodeIdx];
     if (intersect_aabb( ray, node.aabbMin, node.aabbMax ) != std::numeric_limits<Scalar>::max()){
-        IntersectInner( ray, node.leftFirst );
-        IntersectInner( ray, node.leftFirst + 1 );
+        InnerIntersect( ray, node.leftFirst );
+        InnerIntersect( ray, node.leftFirst + 1 );
     }
 
-    // Restore ray origin and direction
-    backupRay.t = ray.t;
-    backupRay.hit = ray.hit;
-    ray = backupRay;
+    // Reset the ray:
+    backup_ray.t = ray.t;
+    backup_ray.hit = ray.hit;
+    ray = backup_ray;
 };
 
-// TODO REMOVE THIS!!!!
 template <typename Scalar>
-void BVH<Scalar>::SetTranslation( Vector3<Scalar>& translation ){
-    this->translation = translation;
-
-    // calculate world-space bounds using the new matrix
-    Vector3<Scalar> bmin = bvhNode[0].aabbMin;
-    Vector3<Scalar> bmax = bvhNode[0].aabbMax;
-    
-    // Get the new bounds:
-    auto new_bmin = bmin + translation;
-    auto new_bmax = bmax + translation;
-    this->bounds.grow(new_bmin);
-    this->bounds.grow(new_bmax);
+AABB<Scalar> BVH<Scalar>::Bounds() {
+	BVHNode<Scalar>& node = bvhNode[0];
+	return { .bmin = node.aabbMin, .bmax = node.aabbMax  };
 }
 
 // Explicitly Instantiate floats and doubles:

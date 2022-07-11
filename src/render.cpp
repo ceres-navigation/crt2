@@ -22,60 +22,115 @@
 
 using Scalar = float;
 
-struct TLASNode
-{
+// TLAS CODE:
+struct TLASNode {
     Vector3<Scalar> aabbMin;
     uint leftRight; // 2x16 bits
     Vector3<Scalar> aabbMax;
-    uint BLAS;
+    uint blas_id;
     bool isLeaf() { return leftRight == 0; }
 };
 
 class TLAS {
     public:
         TLAS() = default;
-        TLAS( BVH<Scalar>* bvhList, int N );
+        TLAS( Geometry<Scalar>* geometryList, uint N );
         void Build();
         void Intersect( Ray<Scalar>& ray );
-    // private:
+        
+    private:
+        uint FindBestMatch( uint* list, uint N, uint A );
         TLASNode* tlasNode = 0;
         BVH<Scalar>* blas = 0;
         uint nodesUsed, blasCount;
 };
 
-TLAS::TLAS( BVH<Scalar>* bvhList, int N ) {
+TLAS::TLAS( Geometry<Scalar>* geometryList, uint N ) {
+    // Store all BLAS:
+    blas = new BVH<Scalar>[N];
+    std::cout << "ADDING TO BLAS:\n";
+    for (uint i = 0; i < N; i++) {
+        blas[i] = *geometryList[i].bvh;
+        std::cout << blas[i].bounds.bmin[0] << ", " << blas[i].bounds.bmin[1] << ", " << blas[i].bounds.bmin[2] << "\n";
+        std::cout << blas[i].bounds.bmax[0] << ", " << blas[i].bounds.bmax[1] << ", " << blas[i].bounds.bmax[2] << "\n";
+    }
+    std::cout <<"\n";
+
     // copy a pointer to the array of bottom level accstructs
-    blas = bvhList;
     blasCount = N;
+
     // allocate TLAS nodes
     tlasNode = new TLASNode[2*N];
-    nodesUsed = 2;
+    nodesUsed = 0;
+}
+
+uint TLAS::FindBestMatch( uint* list, uint N, uint A ) {
+	// find BLAS B that, when joined with A, forms the smallest AABB
+	Scalar smallest = std::numeric_limits<Scalar>::max();
+	uint bestB = -1;
+	for (uint B = 0; B < N; B++) {
+        if (B != A) {
+            Vector3<Scalar> bmax = max( tlasNode[list[A]].aabbMax, tlasNode[list[B]].aabbMax );
+            Vector3<Scalar> bmin = min( tlasNode[list[A]].aabbMin, tlasNode[list[B]].aabbMin );
+            Vector3<Scalar> e = bmax - bmin;
+            Scalar surfaceArea = e[0] * e[1] + e[1] * e[2] + e[2] * e[0];
+            if (surfaceArea < smallest){
+                smallest = surfaceArea;
+                bestB = B;
+            }
+        }
+    }
+	return bestB;
 }
 
 void TLAS::Build() {
-    // assign a TLASleaf node to each BLAS
-    int nodeIdx[256], nodeIndices = blasCount;
+    // assign a TLAS leaf node to each BLAS
+    uint* nodeIdx = new uint[blasCount];
+    uint nodeIndices = blasCount;
     nodesUsed = 1;
-    for (uint i = 0; i < blasCount; i++)
-    {
+    for (uint i = 0; i < blasCount; i++) {
         nodeIdx[i] = nodesUsed;
+        std::cout << blas[i].bounds.bmin[0] << ", " << blas[i].bounds.bmin[1] << ", " << blas[i].bounds.bmin[2] << "\n";
+        std::cout << blas[i].bounds.bmax[0] << ", " << blas[i].bounds.bmax[1] << ", " << blas[i].bounds.bmax[2] << "\n";
         tlasNode[nodesUsed].aabbMin = blas[i].bounds.bmin;
         tlasNode[nodesUsed].aabbMax = blas[i].bounds.bmax;
-        tlasNode[nodesUsed].BLAS = i;
-        tlasNode[nodesUsed++].leftRight = 0; // makes it a leaf
+        tlasNode[nodesUsed].blas_id = i;
+        tlasNode[nodesUsed++].leftRight = 0;
     }
+
+    // use agglomerative clustering to build the TLAS
+	uint A = 0;
+    uint B = FindBestMatch( nodeIdx, nodeIndices, A );
+	while (nodeIndices > 1) {
+		uint C = FindBestMatch( nodeIdx, nodeIndices, B );
+		if (A == C) {
+			uint nodeIdxA = nodeIdx[A], nodeIdxB = nodeIdx[B];
+			TLASNode& nodeA = tlasNode[nodeIdxA];
+			TLASNode& nodeB = tlasNode[nodeIdxB];
+			TLASNode& newNode = tlasNode[nodesUsed];
+			newNode.leftRight = nodeIdxA + (nodeIdxB << 16);
+			newNode.aabbMin = min( nodeA.aabbMin, nodeB.aabbMin );
+			newNode.aabbMax = max( nodeA.aabbMax, nodeB.aabbMax );
+			nodeIdx[A] = nodesUsed++;
+			nodeIdx[B] = nodeIdx[nodeIndices - 1];
+			B = FindBestMatch( nodeIdx, --nodeIndices, A );
+		}
+		else {
+            A = B;
+            B = C;
+        }
+	}
+	tlasNode[0] = tlasNode[nodeIdx[A]];
+
+	delete[] nodeIdx;
 }
 
 void TLAS::Intersect( Ray<Scalar>& ray ) {
 	TLASNode* node = &tlasNode[0], * stack[64];
 	uint stackPtr = 0;
-	while (1)
-	{
-		// std::cerr << "Testing TLAS nodes " << (node->leftRight & 0xffff) << " and " << (node->leftRight >> 16) << std::endl;
-		if (node->isLeaf())
-		{
-			// std::cerr << "Hit leaf" << std::endl;
-			blas[node->BLAS].Intersect( ray );
+	while (1) {
+        if (node->isLeaf()) {
+			blas[node->blas_id].Intersect( ray );
 			if (stackPtr == 0) break; else node = stack[--stackPtr];
 			continue;
 		}
@@ -85,15 +140,16 @@ void TLAS::Intersect( Ray<Scalar>& ray ) {
 		Scalar dist1 = intersect_aabb( ray, child1->aabbMin, child1->aabbMax );
 		Scalar dist2 = intersect_aabb( ray, child2->aabbMin, child2->aabbMax );
 
-		if (dist1 > dist2) { std::swap( dist1, dist2 ); std::swap( child1, child2 ); }
-		if (dist1 == 1e30f)
-		{
+		if (dist1 > dist2) { 
+            std::swap( dist1, dist2 ); 
+            std::swap( child1, child2 );
+        }
+		if (dist1 == std::numeric_limits<Scalar>::max()) {
 			if (stackPtr == 0) break; else node = stack[--stackPtr];
 		}
-		else
-		{
+		else {
 			node = child1;
-			if (dist2 != 1e30f) stack[stackPtr++] = child2;
+			if (dist2 != std::numeric_limits<Scalar>::max()) stack[stackPtr++] = child2;
 		}
 	}
 }
@@ -108,36 +164,32 @@ int main(){
 
     // Define camera:
     SimpleCamera<Scalar> camera(30, sensor, true);
-    camera.set_position(0,0,-16);
+    camera.set_position(0,0,-15);
 
     // Define a simple light:
     PointLight<Scalar> light(1);
 
     // Load geometry:
-    Geometry<Scalar>* geometries = new Geometry<Scalar>[4];
-    geometries[0].read_obj("../suzanne.obj");
-    geometries[0].set_position(Vector3<Scalar>(0,-5,0));
-
-    geometries[1].read_obj("../suzanne.obj");
-    geometries[1].set_position(Vector3<Scalar>(0,-4,0));
-
-    geometries[0].build_bvh();
-    geometries[1].build_bvh();
+    int N = 4;
+    Geometry<Scalar>* geometries = new Geometry<Scalar>[N];
+    for (int i = 0; i < N; i++) {
+        geometries[i].read_obj("../suzanne.obj");//, "obj");
+        geometries[i].construct_triangles();
+        geometries[i].build_bvh();
+        geometries[i].set_position(Vector3<Scalar>(0,2.5*i - 7,9));
+    }
+    for (int i = 0; i < N; i++){
+        std::cout << geometries[i].bvh->bounds.bmin[0] << ", " << geometries[i].bvh->bounds.bmin[1] << ", " << geometries[i].bvh->bounds.bmin[2] << "\n";
+        std::cout << geometries[i].bvh->bounds.bmax[0] << ", " << geometries[i].bvh->bounds.bmax[1] << ", " << geometries[i].bvh->bounds.bmax[2] << "\n";
+    }
 
     // Create the scene:
-    // Scene<Scalar> scene(geometries, 4);
-
-    BVH<Scalar>* bvhs = new BVH<Scalar>[2];
-    bvhs[0] = *geometries[0].bvh;
-    bvhs[0].SetTranslation(geometries[0].position);
-    bvhs[1] = *geometries[1].bvh;
-    bvhs[1].SetTranslation(geometries[1].position);
-    auto tlas = TLAS( bvhs, 2 );
+    auto tlas = TLAS(geometries, N);
 
     // Build BVH:
     std::cout << "Building BVH...\n";
     auto start = std::chrono::high_resolution_clock::now();
-    // scene.build_bvh();
+
     tlas.Build();
 
     auto stop = std::chrono::high_resolution_clock::now();
@@ -155,17 +207,7 @@ int main(){
                 for (int y = 0; y < tile_size; y++){
                     auto ray = camera.pixel_to_ray(u+x,v+y);
                     // scene.intersect( ray );
-                    // tlas.Intersect( ray );
-
-                    // tlas.blas[0].Intersect( ray, 0 );
-                    // tlas.blas[1].Intersect( ray, 0 );
-
-                    // std::cout << ray.origin[1] << "\n";
-                    bvhs[0].Intersect( ray );
-                    // std::cout << ray.origin[1] << "\n";
-                    bvhs[1].Intersect( ray );
-                    // std::cout << ray.origin[1] << "\n";
-                    // exit(0);
+                    tlas.Intersect( ray );
 
                     if (ray.hit.t < std::numeric_limits<Scalar>::max()) {
                         image[u+x][v+y] = 255;
