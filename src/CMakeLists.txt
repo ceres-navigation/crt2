@@ -8,5 +8,5 @@ link_directories(${CMAKE_SOURCE_DIR}/external/oneTBB/prefix/lib)
 # target_link_libraries(convert_objs PUBLIC zstd tinyobjloader tbb rt)
 
 # Add the rendering tool:
-add_executable(render render.cpp)
-target_link_libraries(render PUBLIC zstd tinyobjloader tbb rt)
+add_executable(vira vira.cpp)
+target_link_libraries(vira PUBLIC zstd tinyobjloader tbb lodepng rt)

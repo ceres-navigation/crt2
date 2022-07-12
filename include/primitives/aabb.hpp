@@ -1,7 +1,7 @@
 #ifndef __AABB_H_
 #define __AABB_H_
 
-#include "vector_math/vector.hpp"
+#include "utils/vector.hpp"
 #include "primitives/ray.hpp"
 
 template <typename Scalar>

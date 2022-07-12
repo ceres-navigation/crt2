@@ -1,4 +1,4 @@
-#include "vector_math/rotation.hpp"
+#include "utils/rotation.hpp"
 
 template <typename Scalar>
 Rotation<Scalar>::Rotation(Scalar elements[3][3]){

@@ -1,6 +1,6 @@
-#include "rigid_body.hpp"
-#include "vector_math/vector.hpp"
-#include "vector_math/rotation.hpp"
+#include "utils/rigid_body.hpp"
+#include "utils/vector.hpp"
+#include "utils/rotation.hpp"
 
 template <typename Scalar>
 RigidBody<Scalar>::RigidBody(){

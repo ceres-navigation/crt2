@@ -1,6 +1,6 @@
 #include "primitives/triangle.hpp"
 #include "primitives/ray.hpp"
-#include "vector_math/vector.hpp"
+#include "utils/vector.hpp"
 
 template <typename Scalar>
 void intersect_triangle(Ray<Scalar>& ray, const Triangle<Scalar>& triangle){

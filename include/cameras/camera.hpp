@@ -1,7 +1,7 @@
 #ifndef __CAMERA_H_
 #define __CAMERA_H_
 
-#include "rigid_body.hpp"
+#include "utils/rigid_body.hpp"
 #include "sensors/sensor.hpp"
 #include "primitives/ray.hpp"
 

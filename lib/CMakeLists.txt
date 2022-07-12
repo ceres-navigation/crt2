@@ -3,26 +3,26 @@ find_package(zstd PATHS ${CMAKE_SOURCE_DIR}/external/zstd/prefix)
 
 add_library(
     rt
-    scene.cpp
-    geometry.cpp
-    rigid_body.cpp
-    bvh.cpp
-    group.cpp
+    
+    render.cpp
+
+    acceleration/scene.cpp
+    acceleration/bvh.cpp
 
     cameras/simple_camera.cpp
 
-    graph_nodes/blas_node.cpp
-
     lights/point_light.cpp
 
+    primitives/geometry.cpp
     primitives/ray.cpp
     primitives/aabb.cpp
     primitives/triangle.cpp
 
     sensors/simple_sensor.cpp
 
-    vector_math/vector.cpp
-    vector_math/rotation.cpp
+    utils/rigid_body.cpp
+    utils/vector.cpp
+    utils/rotation.cpp
 )
 
 target_link_libraries(rt PRIVATE PUBLIC zstd)

@@ -1,7 +1,7 @@
 #ifndef __TRIANGLE_H_
 #define __TRIANGLE_H_
 
-#include "vector_math/vector.hpp"
+#include "utils/vector.hpp"
 #include "primitives/ray.hpp"
 
 template <typename Scalar>

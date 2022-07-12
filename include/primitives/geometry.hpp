@@ -2,13 +2,14 @@
 #define __GEOMETRY_H_
 
 #include <vector>
-#include "primitives/triangle.hpp"
-#include "primitives/ray.hpp"
 #include <stdint.h>
 
-#include "rigid_body.hpp"
+#include "primitives/triangle.hpp"
+#include "primitives/ray.hpp"
 
-#include "bvh.hpp"
+#include "utils/rigid_body.hpp"
+
+#include "acceleration/bvh.hpp"
 
 template <typename Scalar>
 class Geometry : public RigidBody<Scalar>{

@@ -1,10 +1,10 @@
-#include "bvh.hpp"
+#include "acceleration/bvh.hpp"
 
 #include "primitives/triangle.hpp"
 #include "primitives/ray.hpp"
 #include "primitives/aabb.hpp"
-#include "vector_math/vector.hpp"
-#include "vector_math/rotation.hpp"
+#include "utils/vector.hpp"
+#include "utils/rotation.hpp"
 
 template <typename Scalar>
 BVH<Scalar>::BVH(){

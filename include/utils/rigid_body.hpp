@@ -1,8 +1,8 @@
 #ifndef __RIGID_BODY_H
 #define __RIGID_BODY_H
 
-#include "vector_math/vector.hpp"
-#include "vector_math/rotation.hpp"
+#include "utils/vector.hpp"
+#include "utils/rotation.hpp"
 
 template <typename Scalar>
 class RigidBody {

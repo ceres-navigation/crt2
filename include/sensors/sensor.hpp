@@ -1,6 +1,8 @@
 #ifndef __SENSOR_H_
 #define __SENSOR_H_
 
+#include <stdint.h>
+
 template <typename Scalar>
 class Sensor {
     public:

@@ -1,5 +1,5 @@
 #include "primitives/aabb.hpp"
-#include "vector_math/vector.hpp"
+#include "utils/vector.hpp"
 
 template <typename Scalar>
 void AABB<Scalar>::grow(Vector3<Scalar> p){

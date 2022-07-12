@@ -15,8 +15,8 @@
 #include <zstd.h>
 #include <tiny_obj_loader.h>
 
-#include "geometry.hpp"
-#include "bvh.hpp"
+#include "primitives/geometry.hpp"
+#include "acceleration/bvh.hpp"
 
 #include "primitives/triangle.hpp"
 #include "primitives/ray.hpp"

@@ -2,7 +2,7 @@
 #define __POINT_LIGHT_H_
 
 #include "lights/light.hpp"
-#include "vector_math/vector.hpp"
+#include "utils/vector.hpp"
 #include "primitives/ray.hpp"
 
 template <typename Scalar>

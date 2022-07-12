@@ -1,8 +1,8 @@
 #ifndef __LIGHT_H_
 #define __LIGHT_H_
 
-#include "rigid_body.hpp"
-#include "vector_math/vector.hpp"
+#include "utils/rigid_body.hpp"
+#include "utils/vector.hpp"
 #include "primitives/ray.hpp"
 
 // Abstract light class:

@@ -1,7 +1,7 @@
 #ifndef __MATRIX_H_
 #define __MATRIX_H_
 
-#include "vector_math/vector.hpp"
+#include "utils/vector.hpp"
 
 template <typename Scalar>
 struct Rotation{

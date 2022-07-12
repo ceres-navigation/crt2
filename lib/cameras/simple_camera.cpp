@@ -1,7 +1,7 @@
 #include "sensors/sensor.hpp"
 
 #include "cameras/simple_camera.hpp"
-#include "vector_math/vector.hpp"
+#include "utils/vector.hpp"
 
 #include "primitives/ray.hpp"
 
