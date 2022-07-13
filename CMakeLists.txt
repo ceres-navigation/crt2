@@ -7,6 +7,8 @@ project(rt CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE) 
+
 # Uncomment these lines to compile for debugging:
 # set(CMAKE_BUILD_TYPE Debug)
 # set(CMAKE_CXX_FLAGS_DEBUG "-g")

@@ -5,7 +5,7 @@
 #include "lights/light.hpp"
 
 template<typename Scalar>
-inline void backward_trace(Scene<Scalar>* scene, Ray<Scalar>& ray, std::vector<Light<Scalar>*> &lights, Vector3<Scalar> &pixel_radiance){
+void backward_trace(Scene<Scalar>* scene, Ray<Scalar>& ray, std::vector<Light<Scalar>*> &lights, Vector3<Scalar> &pixel_radiance){
     // Intersect ray with scene:
     scene->Intersect( ray );
 
