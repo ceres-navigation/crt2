@@ -10,6 +10,10 @@
 #include "utils/vector.hpp"
 #include "utils/rotation.hpp"
 
+// Forward declaration of Geometry class:
+template <typename Scalar>
+class Geometry;
+
 // TRANSFORM NODE STUFF
 // MODE THIS
 template <typename Scalar>
@@ -80,6 +84,8 @@ class BVH{
         Rotation<Scalar> rotation = Rotation<Scalar>(); // Default to Identity
         bool transform_changed = false;
 
+        Geometry<Scalar>* parent;
+
         // Transformation Nodes:
         int num_transformations = 0;
         TransformNode<Scalar>* transform_nodes = nullptr;
@@ -98,6 +104,8 @@ class BVH{
         void UpdateBounds(); // Update bounds based on the current transformations
 
         void UpdateNodeBounds( uint nodeIdx );
+
+        void set_parent(Geometry<Scalar>* parent);
 
         // Functions for Binned BVH building:
         Scalar FindBestSplitPlane( BVHNode<Scalar>& node, int& axis, Scalar& splitPos);

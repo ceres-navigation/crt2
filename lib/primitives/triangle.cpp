@@ -30,7 +30,6 @@ void intersect_triangle(Ray<Scalar>& ray, const Triangle<Scalar>& triangle){
         ray.hit.t = t;
         ray.hit.u = u;
         ray.hit.v = v;
-        ray.hit.n = cross<Scalar>(edge2, edge1);
     }
 };
 

@@ -2,13 +2,22 @@
 #define __RAY_H_
 
 #include "utils/vector.hpp"
+// #include "primitives/geometry.hpp"
+
+// Forward declaration of Geometry class:
+template <typename Scalar>
+class Geometry; 
+
 
 template <typename Scalar>
 struct Intersection {
-    Vector3<Scalar> n;
     Scalar t = std::numeric_limits<Scalar>::max();
-    Scalar u, v;
+    Scalar u;
+    Scalar v;
+    Geometry<Scalar>* geometry = nullptr;
+    uint triIdx;
 };
+
 
 template <typename Scalar>
 struct Ray {

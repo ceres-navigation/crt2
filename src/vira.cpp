@@ -34,18 +34,18 @@ int main(){
 
     // Define camera:
     SimpleCamera<Scalar> camera(30, sensor, true);
-    camera.set_position(0,0,-15);
+    camera.set_position(0,0,-5);
 
     // Define a simple light:
     std::vector<Light<Scalar>*> lights;
-    lights.push_back(new PointLight<Scalar>(1));
+    lights.push_back(new PointLight<Scalar>(10));
+    lights[0]->set_position(10,0,5);
 
     // Load geometries:
-    int N = 4;
+    int N = 7;
     Geometry<Scalar>* geometries = new Geometry<Scalar>[N];
     for (int i = 0; i < N; i++) {
         geometries[i].read_obj("../suzanne.obj");//, "obj");
-        geometries[i].construct_triangles();
         geometries[i].build_bvh();
         geometries[i].set_position(Vector3<Scalar>(0,2.5*i - 7,9));
     }

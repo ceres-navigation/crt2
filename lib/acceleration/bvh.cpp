@@ -26,6 +26,11 @@ BVH<Scalar>::~BVH(){
 };
 
 template <typename Scalar>
+void BVH<Scalar>::set_parent(Geometry<Scalar>* parent){
+    this->parent = parent;
+}
+
+template <typename Scalar>
 void BVH<Scalar>::UpdateBounds(){
     Vector3<Scalar> bmin = this->bounds.bmin;
     Vector3<Scalar> bmax = this->bounds.bmax;
@@ -211,7 +216,12 @@ void BVH<Scalar>::InnerIntersect( Ray<Scalar>& ray, const uint nodeIdx ) {
 
     if (node.isLeaf()) {
         for (uint i = 0; i < node.triCount; i++ ){
+            auto t = ray.hit.t;
             intersect_triangle( ray, tri[triIdx[node.leftFirst + i]] );
+            if (ray.hit.t < t){
+                ray.hit.triIdx = triIdx[node.leftFirst + i];
+                ray.hit.geometry = parent;
+            }
         }
     }
     else {

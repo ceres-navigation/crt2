@@ -40,8 +40,6 @@ Geometry<Scalar>::Geometry(const char* file_path, std::string file_type){
         exit(2);
     }
 
-    this->construct_triangles();
-
     this->build_bvh();
 };
 
@@ -109,37 +107,48 @@ void Geometry<Scalar>::set_transform(Scalar new_scale, Vector3<Scalar> new_posit
 template <typename Scalar>
 void Geometry<Scalar>::build_bvh(int BINS){
     this->bvh = new BVH<Scalar>(this->triangles, this->num_triangles);
+    this->bvh->set_parent(this);
     this->bvh->Build(BINS);
 }
 
 template <typename Scalar>
-void Geometry<Scalar>::construct_triangles(){
+void Geometry<Scalar>::construct_triangles(std::vector<Vector3<Scalar>> vertices, 
+                                           std::vector<std::vector<uint32_t>> faces,
+                                           std::vector<Vector3<Scalar>> normals,
+                                           std::vector<Vector2<Scalar>> texture_coordinates){
     // Get the number of triangles:
-    this->num_triangles = this->faces.size();
+    this->num_triangles = faces.size();
 
     // Allocate triangles on heap:
     this->triangles = new Triangle<Scalar>[this->num_triangles];
+    this->triangle_data = new TriangleData<Scalar>[this->num_triangles];
 
     // Populate triangles with the data read in from a file:
     for (uint32_t i = 0; i < num_triangles; i++){
-        auto face_def = this->faces[i];
+        auto face_def = faces[i];
 
-        auto v0 = Vector3<Scalar>(this->vertices[face_def[0]][0], this->vertices[face_def[0]][1], this->vertices[face_def[0]][2]);
-        auto v1 = Vector3<Scalar>(this->vertices[face_def[1]][0], this->vertices[face_def[1]][1], this->vertices[face_def[1]][2]);
-        auto v2 = Vector3<Scalar>(this->vertices[face_def[2]][0], this->vertices[face_def[2]][1], this->vertices[face_def[2]][2]);
+        // Calculate triangle vertices:
+        this->triangles[i].vertex0 = vertices[face_def[0]];
+        this->triangles[i].vertex1 = vertices[face_def[1]];
+        this->triangles[i].vertex2 = vertices[face_def[2]];
 
-        this->triangles[i].vertex0 = v0;
-        this->triangles[i].vertex1 = v1;
-        this->triangles[i].vertex2 = v2;
+        // this->triangle_data[i].vn0 = normals[face_def[0]];
+        // this->triangle_data[i].vn1 = normals[face_def[1]];
+        // this->triangle_data[i].vn2 = normals[face_def[2]];
 
-        // TODO: Include additional triangle data...
+        // Calculate face normal:
+        Vector3<Scalar> edge1 = this->triangles[i].vertex1 - this->triangles[i].vertex0;
+        Vector3<Scalar> edge2 = this->triangles[i].vertex2 - this->triangles[i].vertex0;
+        this->triangle_data[i].face_normal = normalize<Scalar>(cross<Scalar>(edge1, edge2));
     }
 };
 
 template <typename Scalar>
 void Geometry<Scalar>::read_obj(const char* file_path){
-    this->vertices.clear();
-    this->faces.clear();
+    std::vector<Vector3<Scalar>> vertices;
+    std::vector<std::vector<uint32_t>> faces;
+    std::vector<Vector3<Scalar>> normals;
+    std::vector<Vector2<Scalar>> texture_coordinates;
 
     tinyobj::ObjReader reader;
     tinyobj::ObjReaderConfig reader_config;
@@ -164,13 +173,23 @@ void Geometry<Scalar>::read_obj(const char* file_path){
         tinyobj::real_t vx_i = attrib.vertices[size_t(i)+0];
         tinyobj::real_t vy_i = attrib.vertices[size_t(i)+1];
         tinyobj::real_t vz_i = attrib.vertices[size_t(i)+2];
-        vertex.push_back((Scalar) vx_i);
-        vertex.push_back((Scalar) vy_i);
-        vertex.push_back((Scalar) vz_i);
-        this->vertices.push_back(vertex);
+        vertices.push_back(Vector3<Scalar>((Scalar) vx_i, (Scalar) vy_i, (Scalar) vz_i));
     }
 
-    // Loop over shapes
+    // Loop over vertex normals:
+    for (size_t i = 0; i < attrib.normals.size(); i=i+3){
+
+    }
+
+    // Loop over texture coordinates:
+    for (size_t i = 0; i < attrib.texcoords.size(); i=i+3){
+        std::vector<Scalar> texcoord;
+        tinyobj::real_t u = attrib.texcoords[size_t(i)+0];
+        tinyobj::real_t v = attrib.texcoords[size_t(i)+1];
+        texture_coordinates.push_back(Vector2<Scalar>((Scalar) u, (Scalar) v));
+    }
+
+    // Loop over shapes:
     for (size_t s = 0; s < shapes.size(); s++) {
         // Loop over faces(polygon)
         size_t index_offset = 0;
@@ -184,160 +203,163 @@ void Geometry<Scalar>::read_obj(const char* file_path){
                 tinyobj::index_t idx_i = shapes[s].mesh.indices[index_offset + v];
                 face_def.push_back((uint32_t) idx_i.vertex_index);
             }
-            this->faces.push_back(face_def);
+            faces.push_back(face_def);
             index_offset += fv;
 
             // per-face material
             shapes[s].mesh.material_ids[f];
         }
     }
+
+    // Construct the triangles:
+    this->construct_triangles(vertices, faces, normals, texture_coordinates);
 };
 
-template <typename Scalar>
-void Geometry<Scalar>::read_binary(const char* file_path){
-    this->vertices.clear();
-    this->faces.clear();
+// template <typename Scalar>
+// void Geometry<Scalar>::read_binary(const char* file_path){
+//     this->vertices.clear();
+//     this->faces.clear();
 
-    char magic_return[magic_length];
-    uint32_t compressed_v_size;
-    uint32_t compressed_f_size;
-    uint32_t num_v;
-    uint32_t num_f;
+//     char magic_return[magic_length];
+//     uint32_t compressed_v_size;
+//     uint32_t compressed_f_size;
+//     uint32_t num_v;
+//     uint32_t num_f;
 
-    // Read the file:
-    FILE* file = fopen(file_path, "rb");
+//     // Read the file:
+//     FILE* file = fopen(file_path, "rb");
 
-    // Verify magic keyword:
-    size_t fread_ret;
-    fread_ret = fread(&magic_return, sizeof(char), 6, file);
-    if (fread_ret){ std::cout << fread_ret <<"\n";};
-    fread_ret = fread(&compressed_v_size, sizeof(uint32_t), 1, file);
-    if (fread_ret){ std::cout << fread_ret <<"\n";};
-    fread_ret = fread(&compressed_f_size, sizeof(uint32_t), 1, file);
-    if (fread_ret){ std::cout << fread_ret <<"\n";};
-    fread_ret = fread(&num_v, sizeof(uint32_t), 1, file);
-    if (fread_ret){ std::cout << fread_ret <<"\n";};
-    fread_ret = fread(&num_f, sizeof(uint32_t), 1, file);
-    if (fread_ret){ std::cout << fread_ret <<"\n";};
+//     // Verify magic keyword:
+//     size_t fread_ret;
+//     fread_ret = fread(&magic_return, sizeof(char), 6, file);
+//     if (fread_ret){ std::cout << fread_ret <<"\n";};
+//     fread_ret = fread(&compressed_v_size, sizeof(uint32_t), 1, file);
+//     if (fread_ret){ std::cout << fread_ret <<"\n";};
+//     fread_ret = fread(&compressed_f_size, sizeof(uint32_t), 1, file);
+//     if (fread_ret){ std::cout << fread_ret <<"\n";};
+//     fread_ret = fread(&num_v, sizeof(uint32_t), 1, file);
+//     if (fread_ret){ std::cout << fread_ret <<"\n";};
+//     fread_ret = fread(&num_f, sizeof(uint32_t), 1, file);
+//     if (fread_ret){ std::cout << fread_ret <<"\n";};
 
-    // TODO: DEBUG WHY THIS DOESNT WORK:
-    for (int i = 0; i < magic_length; i++){
-        assert(magic_return[i] == magic[i]);
-    }
+//     // TODO: DEBUG WHY THIS DOESNT WORK:
+//     for (int i = 0; i < magic_length; i++){
+//         assert(magic_return[i] == magic[i]);
+//     }
 
-    // Decompress vertices:
-    auto v_compressed = new uint8_t[compressed_v_size];
-    fread_ret = fread(v_compressed, sizeof(uint8_t), compressed_v_size, file);
-    if (fread_ret){ std::cout << fread_ret <<"\n";};
-    auto v_array = new Scalar[num_v][3];
-    auto size_v = ZSTD_decompress(v_array, num_v*3*sizeof(Scalar), v_compressed, compressed_v_size);
-    if (ZSTD_isError(size_v)) {
-        std::cerr << compressed_v_size << " " << ZSTD_getErrorName(size_v) << std::endl;
-    }
+//     // Decompress vertices:
+//     auto v_compressed = new uint8_t[compressed_v_size];
+//     fread_ret = fread(v_compressed, sizeof(uint8_t), compressed_v_size, file);
+//     if (fread_ret){ std::cout << fread_ret <<"\n";};
+//     auto v_array = new Scalar[num_v][3];
+//     auto size_v = ZSTD_decompress(v_array, num_v*3*sizeof(Scalar), v_compressed, compressed_v_size);
+//     if (ZSTD_isError(size_v)) {
+//         std::cerr << compressed_v_size << " " << ZSTD_getErrorName(size_v) << std::endl;
+//     }
 
-    // Decompress faces:
-    auto f_compressed = new uint8_t[compressed_f_size];
-    fread_ret = fread(f_compressed, sizeof(uint8_t), compressed_f_size, file);
-    if (fread_ret){ std::cout << fread_ret <<"\n";};
-    auto f_array = new uint32_t[num_f][3];
-    auto size_f = ZSTD_decompress(f_array, num_f*3*sizeof(uint32_t), f_compressed, compressed_f_size);
-    if (ZSTD_isError(size_f)) {
-        std::cerr << compressed_f_size << " " << ZSTD_getErrorName(size_f) << std::endl;
-    }
+//     // Decompress faces:
+//     auto f_compressed = new uint8_t[compressed_f_size];
+//     fread_ret = fread(f_compressed, sizeof(uint8_t), compressed_f_size, file);
+//     if (fread_ret){ std::cout << fread_ret <<"\n";};
+//     auto f_array = new uint32_t[num_f][3];
+//     auto size_f = ZSTD_decompress(f_array, num_f*3*sizeof(uint32_t), f_compressed, compressed_f_size);
+//     if (ZSTD_isError(size_f)) {
+//         std::cerr << compressed_f_size << " " << ZSTD_getErrorName(size_f) << std::endl;
+//     }
 
-    fclose(file);
+//     fclose(file);
 
-    // Convert 2d array to vector of vector:
-    for (uint32_t i = 0; i < num_v; i++){
-        std::vector<Scalar> vertex;
-        for (int j = 0; j < 3; j++){
-            vertex.push_back(v_array[i][j]);
-        }
-        this->vertices.push_back(vertex);
-    }
+//     // Convert 2d array to vector of vector:
+//     for (uint32_t i = 0; i < num_v; i++){
+//         std::vector<Scalar> vertex;
+//         for (int j = 0; j < 3; j++){
+//             vertex.push_back(v_array[i][j]);
+//         }
+//         this->vertices.push_back(vertex);
+//     }
 
-    // Convert 2d array to vector of vector:
-    for (uint32_t i = 0; i < num_f; i++){
-        std::vector<uint32_t> face_def;
-        for (int j = 0; j < 3; j++){
-            face_def.push_back(f_array[i][j]);
-        }
-        this->faces.push_back(face_def);
-    }
+//     // Convert 2d array to vector of vector:
+//     for (uint32_t i = 0; i < num_f; i++){
+//         std::vector<uint32_t> face_def;
+//         for (int j = 0; j < 3; j++){
+//             face_def.push_back(f_array[i][j]);
+//         }
+//         this->faces.push_back(face_def);
+//     }
 
-    // Release heap allocated arrays:
-    delete [] v_compressed;
-    delete [] v_array;
-    delete [] f_compressed;
-    delete [] f_array;
+//     // Release heap allocated arrays:
+//     delete [] v_compressed;
+//     delete [] v_array;
+//     delete [] f_compressed;
+//     delete [] f_array;
 
-    // Get the triangles:
-    this->construct_triangles();
-};
+//     // Get the triangles:
+//     this->construct_triangles(vertices, faces, normals, texture_coordinates);
+// };
 
-template <typename Scalar>
-void Geometry<Scalar>::write_binary(const char* file_path){
-    uint32_t num_v = this->vertices.size();
-    uint32_t num_f = this->faces.size();
+// template <typename Scalar>
+// void Geometry<Scalar>::write_binary(const char* file_path){
+//     uint32_t num_v = this->vertices.size();
+//     uint32_t num_f = this->faces.size();
 
-    auto v_array = new Scalar[num_v][3];
-    auto f_array = new uint32_t[num_f][3];
+//     auto v_array = new Scalar[num_v][3];
+//     auto f_array = new uint32_t[num_f][3];
 
-    // Convert vector of vector to 2d array:
-    for (uint32_t i = 0; i < num_v; i++){
-        for (int j = 0; j < 3; j++){
-            v_array[i][j] = this->vertices[i][j];
-        }
-    }
+//     // Convert vector of vector to 2d array:
+//     for (uint32_t i = 0; i < num_v; i++){
+//         for (int j = 0; j < 3; j++){
+//             v_array[i][j] = this->vertices[i][j];
+//         }
+//     }
 
-    // Convert vector of vector to 2d array:
-    for (uint32_t i = 0; i < num_f; i++){
-        for (int j = 0; j < 3; j++){
-            f_array[i][j] = this->faces[i][j];
-        }
-    }
+//     // Convert vector of vector to 2d array:
+//     for (uint32_t i = 0; i < num_f; i++){
+//         for (int j = 0; j < 3; j++){
+//             f_array[i][j] = this->faces[i][j];
+//         }
+//     }
 
-    size_t size_bound;
+//     size_t size_bound;
 
-    // Compress the vertices:
-    size_t v_size = num_v*3*sizeof(Scalar);
-    size_bound = ZSTD_compressBound(v_size);
-    auto compressed_v = new Scalar[size_bound];
-    uint32_t compressed_v_size = ZSTD_compress(compressed_v, size_bound, v_array, v_size, 4);
-    if (ZSTD_isError(compressed_v_size)) {
-        std::cerr << ZSTD_getErrorName(compressed_v_size) << std::endl;
-        assert(!ZSTD_isError(compressed_v_size));
-    }
+//     // Compress the vertices:
+//     size_t v_size = num_v*3*sizeof(Scalar);
+//     size_bound = ZSTD_compressBound(v_size);
+//     auto compressed_v = new Scalar[size_bound];
+//     uint32_t compressed_v_size = ZSTD_compress(compressed_v, size_bound, v_array, v_size, 4);
+//     if (ZSTD_isError(compressed_v_size)) {
+//         std::cerr << ZSTD_getErrorName(compressed_v_size) << std::endl;
+//         assert(!ZSTD_isError(compressed_v_size));
+//     }
 
-    // Compress the faces:
-    size_t f_size = num_f*3*sizeof(uint32_t);
-    size_bound = ZSTD_compressBound(f_size);
-    auto compressed_f = new uint8_t[size_bound];
-    uint32_t compressed_f_size = ZSTD_compress(compressed_f, size_bound, f_array, f_size, 4);
-    if (ZSTD_isError(compressed_f_size)) {
-        std::cerr << ZSTD_getErrorName(compressed_f_size) << std::endl;
-        assert(!ZSTD_isError(compressed_f_size));
-    }
+//     // Compress the faces:
+//     size_t f_size = num_f*3*sizeof(uint32_t);
+//     size_bound = ZSTD_compressBound(f_size);
+//     auto compressed_f = new uint8_t[size_bound];
+//     uint32_t compressed_f_size = ZSTD_compress(compressed_f, size_bound, f_array, f_size, 4);
+//     if (ZSTD_isError(compressed_f_size)) {
+//         std::cerr << ZSTD_getErrorName(compressed_f_size) << std::endl;
+//         assert(!ZSTD_isError(compressed_f_size));
+//     }
 
-    // Write uncompressed header to file:
-    FILE* file = fopen(file_path, "wb");
-    fwrite(magic.c_str(), sizeof(char), magic_length, file);
-    fwrite(&compressed_v_size, sizeof(uint32_t), 1, file);
-    fwrite(&compressed_f_size, sizeof(uint32_t), 1, file);
-    fwrite(&num_v, sizeof(uint32_t), 1, file);
-    fwrite(&num_f, sizeof(uint32_t), 1, file);
+//     // Write uncompressed header to file:
+//     FILE* file = fopen(file_path, "wb");
+//     fwrite(magic.c_str(), sizeof(char), magic_length, file);
+//     fwrite(&compressed_v_size, sizeof(uint32_t), 1, file);
+//     fwrite(&compressed_f_size, sizeof(uint32_t), 1, file);
+//     fwrite(&num_v, sizeof(uint32_t), 1, file);
+//     fwrite(&num_f, sizeof(uint32_t), 1, file);
 
-    // Write out the compressed data blocks:
-    fwrite(compressed_v, compressed_v_size, 1, file);
-    fwrite(compressed_f, compressed_f_size, 1, file);
-    fclose(file);
+//     // Write out the compressed data blocks:
+//     fwrite(compressed_v, compressed_v_size, 1, file);
+//     fwrite(compressed_f, compressed_f_size, 1, file);
+//     fclose(file);
 
-    // Release heap allocated arrays:
-    delete [] v_array;
-    delete [] f_array;
-    delete [] compressed_v;
-    delete [] compressed_f;
-};
+//     // Release heap allocated arrays:
+//     delete [] v_array;
+//     delete [] f_array;
+//     delete [] compressed_v;
+//     delete [] compressed_f;
+// };
 
 
 

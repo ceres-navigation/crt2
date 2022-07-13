@@ -11,6 +11,11 @@
 
 #include "acceleration/bvh.hpp"
 
+// Forward declaration of Ray class:
+template <typename Scalar>
+class Ray; 
+
+
 template <typename Scalar>
 class Geometry : public RigidBody<Scalar>{
     public:
@@ -23,14 +28,13 @@ class Geometry : public RigidBody<Scalar>{
 
         BVH<Scalar>* bvh = nullptr;
 
-        // Definition of the geomtry to be stored:
-        std::vector<std::vector<Scalar>> vertices; // TODO: REMOVE THIS!!!  Everything in triangle form
-        std::vector<std::vector<uint32_t>> faces; // TODO: REMOVE THIS!!!  Everything in triangle form
-
         // Triangle defintions:
         uint32_t num_triangles = 0;
         Triangle<Scalar> *triangles = nullptr;
         TriangleData<Scalar> *triangle_data = nullptr;
+
+        // Material definitions:
+        bool smooth_shading = false; // TODO MAKE THIS CONFIGURABLE
 
         Geometry();
 
@@ -40,7 +44,7 @@ class Geometry : public RigidBody<Scalar>{
 
         void intersect(Ray<Scalar> &ray);
 
-        void write_binary(const char* file_path);
+        // void write_binary(const char* file_path);
 
         // Transform setting methods:
         void set_scale(Scalar new_scale);
@@ -52,11 +56,14 @@ class Geometry : public RigidBody<Scalar>{
     // private: 
         void build_bvh(int BINS=8);
 
-        void construct_triangles();
+        void construct_triangles(std::vector<Vector3<Scalar>> vertices, 
+                                 std::vector<std::vector<uint32_t>> faces,
+                                 std::vector<Vector3<Scalar>> normals,
+                                 std::vector<Vector2<Scalar>> texture_coordinates);
 
         // Read from file methods:
         void read_obj(const char* file_path);
-        void read_binary(const char* file_path);
+        // void read_binary(const char* file_path);
 };
 
 #endif

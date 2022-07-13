@@ -1,5 +1,6 @@
 #include "utils/vector.hpp"
 #include "primitives/ray.hpp"
+#include "primitives/geometry.hpp"
 
 template <typename Scalar>
 Ray<Scalar>::Ray() {
@@ -28,3 +29,6 @@ Ray<Scalar>::Ray(Vector3<Scalar> origin, Vector3<Scalar> direction, Scalar t_max
 // Explicitly Instantiate floats and doubles:
 template struct Ray<float>;
 template struct Ray<double>;
+
+template struct Intersection<float>;
+template struct Intersection<double>;

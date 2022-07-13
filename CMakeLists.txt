@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.9)
 
-add_subdirectory(external/pybind11)
-pybind11_add_module(_rt src/pybind.cpp)
+# add_subdirectory(external/pybind11)
+# pybind11_add_module(_rt src/pybind.cpp)
 
 project(rt CXX)
 
