@@ -1,6 +1,6 @@
 #include "utils/vector.hpp"
 #include "primitives/ray.hpp"
-#include "primitives/geometry.hpp"
+#include "geometry.hpp"
 
 template <typename Scalar>
 Ray<Scalar>::Ray() {

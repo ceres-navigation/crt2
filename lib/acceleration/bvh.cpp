@@ -1,4 +1,5 @@
 #include "acceleration/bvh.hpp"
+#include "acceleration/transform_node.hpp"
 
 #include "primitives/triangle.hpp"
 #include "primitives/ray.hpp"

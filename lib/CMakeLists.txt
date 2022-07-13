@@ -5,6 +5,7 @@ add_library(
     vira
     
     scene.cpp
+    geometry.cpp
 
     acceleration/bvh.cpp
 
@@ -14,7 +15,6 @@ add_library(
 
     path_tracing/backward.cpp
 
-    primitives/geometry.cpp
     primitives/ray.cpp
     primitives/aabb.cpp
     primitives/triangle.cpp

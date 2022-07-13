@@ -1,5 +1,3 @@
-#include "scene.hpp"
-
 #include <vector>
 #include <iostream>
 #include <chrono>
@@ -7,10 +5,12 @@
 #include <algorithm>
 #include <iomanip>
 
+#include "scene.hpp"
+#include "geometry.hpp"
+
 #include "cameras/camera.hpp"
 #include "lights/light.hpp"
 
-#include "primitives/geometry.hpp"
 #include "primitives/ray.hpp"
 
 #include "path_tracing/backward.hpp"

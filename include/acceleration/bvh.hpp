@@ -10,52 +10,11 @@
 #include "utils/vector.hpp"
 #include "utils/rotation.hpp"
 
+#include "acceleration/transform_node.hpp"
+
 // Forward declaration of Geometry class:
 template <typename Scalar>
 class Geometry;
-
-// TRANSFORM NODE STUFF
-// MODE THIS
-template <typename Scalar>
-class TransformNode {
-    public:
-        Vector3<Scalar> translation;
-
-        TransformNode(Vector3<Scalar>);
-
-        void apply(Ray<Scalar>& ray);
-        void invert(Ray<Scalar>& ray);
-
-        void apply(Vector3<Scalar>& ray);
-        void invert(Vector3<Scalar>& ray);
-};
-
-template <typename Scalar>
-TransformNode<Scalar>::TransformNode(Vector3<Scalar> translation){
-    this->translation = translation;
-};
-
-template <typename Scalar>
-void TransformNode<Scalar>::apply(Ray<Scalar>& ray){
-    ray.origin = ray.origin + this->translation;
-};
-
-template <typename Scalar>
-void TransformNode<Scalar>::invert(Ray<Scalar>& ray){
-    ray.origin = ray.origin - this->translation;
-}
-
-template <typename Scalar>
-void TransformNode<Scalar>::apply(Vector3<Scalar>& vec){
-    vec = vec + this->translation;
-};
-
-template <typename Scalar>
-void TransformNode<Scalar>::invert(Vector3<Scalar>& vec){
-    vec = vec - this->translation;
-}
-// ========================
-
 
 
 template <typename Scalar>

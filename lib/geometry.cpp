@@ -15,8 +15,9 @@
 #include <zstd.h>
 #include <tiny_obj_loader.h>
 
-#include "primitives/geometry.hpp"
+#include "geometry.hpp"
 #include "acceleration/bvh.hpp"
+#include "acceleration/translate_node.hpp"
 
 #include "primitives/triangle.hpp"
 #include "primitives/ray.hpp"
@@ -36,7 +37,7 @@ Geometry<Scalar>::Geometry(const char* file_path, std::string file_type){
         exit(1);
     }
     else {
-        std::cout << file_type << "is INVALID.  Must be 'obj' or 'binary'.\n";
+        std::cout << "file_type of: " << file_type << " is INVALID.  Must be 'obj' or 'binary'.\n";
         exit(2);
     }
 
@@ -69,7 +70,7 @@ void Geometry<Scalar>::set_position(Vector3<Scalar> new_position) {
 
     this->bvh->position = new_position;
     this->bvh->transform_changed = true;
-    this->bvh->transform_nodes = new TransformNode<Scalar>(new_position);
+    this->bvh->transform_nodes = new TranslateNode<Scalar>(new_position);
     this->bvh->num_transformations = 1;
     this->bvh->UpdateBounds();
 };

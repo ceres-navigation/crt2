@@ -3,7 +3,7 @@
 
 #include "cameras/camera.hpp"
 #include "lights/light.hpp"
-#include "primitives/geometry.hpp"
+#include "geometry.hpp"
 
 template <typename Scalar>
 struct TLASNode {

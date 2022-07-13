@@ -15,7 +15,7 @@
 
 #include "primitives/triangle.hpp"
 #include "primitives/aabb.hpp"
-#include "primitives/geometry.hpp"
+#include "geometry.hpp"
 
 #include "scene.hpp"
 
@@ -45,11 +45,11 @@ int main(){
     for (int i = 0; i < N; i++) {
         geometries[i].read_obj("../suzanne.obj");//, "obj");
         geometries[i].build_bvh();
-        geometries[i].set_position(Vector3<Scalar>(0,2.5*i - 7,9));
+        geometries[i].set_position(Vector3<Scalar>(2.5*i -7, 2.5*i - 7, 9));
     }
 
     // Create the scene:
-    auto scene = Scene(geometries, N);
+    auto scene = Scene<Scalar>(geometries, N);
     scene.Build();
 
     // Render:
