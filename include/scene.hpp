@@ -1,6 +1,8 @@
 #ifndef __SCENE_H_
 #define __SCENE_H_
 
+#include "cameras/camera.hpp"
+#include "lights/light.hpp"
 #include "primitives/geometry.hpp"
 
 template <typename Scalar>
@@ -19,6 +21,8 @@ class Scene {
         Scene( Geometry<Scalar>* geometryList, uint N );
         void Build();
         void Intersect( Ray<Scalar>& ray );
+
+        std::vector<uint8_t> render(Camera<Scalar>& camera, std::vector<Light<Scalar>*> lights);
         
     private:
         uint FindBestMatch( uint* list, uint N, uint A );

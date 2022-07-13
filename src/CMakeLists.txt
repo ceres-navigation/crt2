@@ -5,8 +5,8 @@ link_directories(${CMAKE_SOURCE_DIR}/external/oneTBB/prefix/lib)
 
 # Build the batch convert objs tool:
 # add_executable(convert_objs convert_objs.cpp)
-# target_link_libraries(convert_objs PUBLIC zstd tinyobjloader tbb rt)
+# target_link_libraries(convert_objs PUBLIC zstd tinyobjloader tbb vira)
 
 # Add the rendering tool:
-add_executable(vira vira.cpp)
-target_link_libraries(vira PUBLIC zstd tinyobjloader tbb lodepng rt)
+add_executable(render_test render_test.cpp)
+target_link_libraries(render_test PUBLIC zstd tinyobjloader tbb lodepng vira)

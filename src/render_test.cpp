@@ -4,8 +4,6 @@
 
 #include "lodepng.h"
 
-#include "render.hpp"
-
 #include "utils/vector.hpp"
 #include "sensors/simple_sensor.hpp"
 
@@ -19,7 +17,7 @@
 #include "primitives/aabb.hpp"
 #include "primitives/geometry.hpp"
 
-#include "acceleration/scene.hpp"
+#include "scene.hpp"
 
 #include <chrono>
 
@@ -55,7 +53,7 @@ int main(){
     scene.Build();
 
     // Render:
-    auto image = render<Scalar>(scene,camera,lights);
+    auto image = scene.render(camera,lights);
 
     // Save the image:
     size_t width  = (size_t) floor(camera.sensor->get_resolution_h());
