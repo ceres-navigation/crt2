@@ -126,6 +126,7 @@ template<typename Scalar>
 std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<Light<Scalar>*> lights){
 
     // THINGS TO MOVE OUTSIDE OF FUNCTION:
+    uint num_bounces = 0;
     size_t tile_size = 20;
     uint max_samples = 10;
 	bool print_statements = true;
@@ -182,7 +183,7 @@ std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<L
                         }
 
                         // Evaluate path tracing:
-                        backward_trace(this, ray, lights, pixel_radiance);
+                        backward_trace(this, ray, lights, num_bounces, pixel_radiance);
 
                         // Run adaptive sampling, and bounce ray cast:
                         // TODO!
