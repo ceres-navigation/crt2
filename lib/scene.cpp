@@ -124,7 +124,7 @@ template<typename Scalar>
 std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<Light<Scalar>*> lights){
 
     // THINGS TO MOVE OUTSIDE OF FUNCTION:
-    int tile_size = 16;
+    int tile_size = 20;
     int max_samples = 10;
 	bool print_statements = false;
 

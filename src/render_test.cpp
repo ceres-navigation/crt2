@@ -25,7 +25,7 @@ using Scalar = float;
 
 int main(){
     // Define sensor:
-    Scalar resolution[2] = {640,640};
+    Scalar resolution[2] = {500,500};
     // Scalar resolution[2] = {100,100};
     Scalar size[2] = {30,30};
     SimpleSensor<Scalar> sensor(resolution, size);
