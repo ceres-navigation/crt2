@@ -1,78 +1,61 @@
-// #include "backward.hpp"
+#include "path_tracing/backward.hpp"
 
-// template <typename Scalar>
-// Vector3<Scalar> backward(std::vector<std::unique_ptr<Light<Scalar>>> &lights,
-//                          bvh::Triangle<Scalar>* tri_data,
-//                          bvh::ClosestPrimitiveIntersector<bvh::Bvh<Scalar>, bvh::Triangle<Scalar>, false> &closest_intersector,
-//                          bvh::AnyPrimitiveIntersector<bvh::Bvh<Scalar>, bvh::Triangle<Scalar>, false> &any_intersector,
-//                          bvh::SingleRayTraverser<bvh::Bvh<Scalar>> &traverser,
-//                          bvh::Ray<Scalar> ray, int num_bounces){
-    
-//     // TODO: Make a better random sampling algorithm:
-//     auto hit = traverser.traverse(ray, closest_intersector);
+#include "scene.hpp"
+#include "primitives/ray.hpp"
+#include "lights/light.hpp"
 
-//     // Initialize:
-//     Vector3<Scalar> path_radiance(0);
+template<typename Scalar>
+inline void backward_trace(Scene<Scalar>* scene, Ray<Scalar>& ray, std::vector<Light<Scalar>*> &lights, Vector3<Scalar> &pixel_radiance){
+    // Intersect ray with scene:
+    scene->Intersect( ray );
 
-//     // Loop through all bounces
-//     auto weight = Color(2*M_PI);
-//     int bounce = 0;
-//     for (; bounce < num_bounces; ++bounce){
-//         if (!hit) {
-//             break;
-//         }
-//         auto &tri = tri_data[hit->primitive_index];
-//         auto u = hit->intersection.u;
-//         auto v = hit->intersection.v;
+    // Skip illumination computation if no hit:
+    if (ray.hit.t == std::numeric_limits<Scalar>::max()) {
+        return;
+    }
 
-//         auto normal = bvh::normalize(tri.n);
-//         bvh::Vector3<Scalar> interp_normal;
-//         if (tri.parent->smooth_shading){
-//             interp_normal = bvh::normalize(u*tri.vn1 + v*tri.vn2 + (Scalar(1.0)-u-v)*tri.vn0);
-//         }
-//         else {
-//             interp_normal = normal;
-//         }
-//         bvh::Vector<float, 2> interp_uv = (float)u*tri.uv[1] + (float)v*tri.uv[2] + (float)(Scalar(1.0)-u-v)*tri.uv[0];
-//         auto material = tri.parent->get_material(interp_uv[0], interp_uv[1]);
+    // Calculate intersection point:
+    auto intersect_point = ray.origin + ray.hit.t*ray.direction;
 
-//         //TODO: Figure out how to deal with the self-intersection stuff in a more proper way...
-//         bvh::Vector3<Scalar> intersect_point = (u*tri.p1() + v*tri.p2() + (1-u-v)*tri.p0);
-//         Scalar scale = 0.0001;
-//         intersect_point = intersect_point - scale*normal;
+    // Get the data for the triangle intersected:
+    auto tridata = ray.hit.geometry->triangle_data[ray.hit.triIdx];
 
-//         // Calculate the direct illumination:
-//         Color light_radiance(0);
+    // Calculate the normal:
+    Vector3<Scalar> normal;
+    if (ray.hit.geometry->smooth_shading){
+        normal = normalize<Scalar>(ray.hit.u*tridata.vn1 +
+                                    ray.hit.v*tridata.vn2 + 
+                                    (Scalar(1.0)-ray.hit.u-ray.hit.v)*tridata.vn0);
+    }
+    else {
+        normal = tridata.face_normal;
+    }
 
-//         // Loop through all provided lights:
-//         for (auto& light : lights){
-//             bvh::Ray<Scalar> light_ray = light->sample_ray(intersect_point);
-//             Color light_color = illumination(traverser, any_intersector, interp_uv[0], interp_uv[1], light_ray, ray, interp_normal, material);
-//             light_radiance += light_color * (float) light->get_intensity(intersect_point);
-//         };
+    // Calculate the texture-space UV coordinates:
+    // auto interp_uv = u*tridata.uv1 + v*tridata.uv2 + (Scalar(1.0)-u-v)*tridata.uv0;
 
-//         if (bounce >= 1) {
-//             for (int idx = 0; idx < 3; ++idx){
-//                 light_radiance[idx] = std::clamp(light_radiance[idx], float(0), float(1));
-//             }
-//         }
+    // Cast ray towards the light source:
+    for (auto light: lights){
+        // Scalar tol = 0.0001;
+        intersect_point = intersect_point + normal* (Scalar) 0.0001;
+        Ray<Scalar> light_ray = light->sample_ray(intersect_point);
+        Scalar light_distance = light_ray.t;
+        scene->Intersect( light_ray );
 
-//         // Update the path radiance with the newly calculated radiance:
-//         path_radiance += light_radiance*weight;
+        // If ray is not obstructed, evaluate the illumination model:
+        if (light_ray.hit.t > light_distance){// || light_ray.hit.t < tol) {
+            // SIMPLE LAMBERTIAN BRDF:
+            Scalar L_dot_N = dot(light_ray.direction, normal);
+            Scalar intensity = light->get_intensity(intersect_point);
+            pixel_radiance = pixel_radiance + Vector3<Scalar>(L_dot_N*intensity);
 
-//         // Exit if max bounces is reached:
-//         if (bounce == num_bounces-1) {
-//             break;
-//         }
+            // std::cout << L_dot_N*intensity << "\n";
+            // TODO USE THE MATERIAL POINTER:
+            
+        }
+    }
+};
 
-//         // Cast next ray:
-//         auto [new_direction, bounce_color] = material->sample(ray, interp_normal, interp_uv[0], interp_uv[1]);
-//         ray = bvh::Ray<Scalar>(intersect_point, new_direction);
-//         hit = traverser.traverse(ray, closest_intersector);
-//         weight *= bounce_color;
-//     }
-
-//     return path_radiance;
-// };
-
-// template Vector3<Scalar> backward()
+// Explicitly Instantiate floats and doubles:
+template void backward_trace<float>(Scene<float>* scene, Ray<float>& ray, std::vector<Light<float>*> &lights, Vector3<float> &pixel_radiance);
+template void backward_trace<double>(Scene<double>* scene, Ray<double>& ray, std::vector<Light<double>*> &lights, Vector3<double> &pixel_radiance);

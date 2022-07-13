@@ -12,7 +12,7 @@ add_library(
 
     lights/point_light.cpp
 
-    # path_tracing/backward.cpp
+    path_tracing/backward.cpp
 
     primitives/geometry.cpp
     primitives/ray.cpp

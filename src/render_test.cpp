@@ -62,11 +62,6 @@ int main(){
     if(error) {
         std::cout << "PNG error " << error << ": "<< lodepng_error_text(error) << std::endl;
     }
-    // std::string filename = "frame_bvh.ppm";
-    // std::ofstream ppm2(filename, std::ios::binary);
-    // ppm2 << "P5\n" << sensor.get_resolution_h() << ' ' << sensor.get_resolution_v() << "\n255\n";
-    // ppm2.write(reinterpret_cast<char *>(image), camera.sensor->get_resolution_h() * camera.sensor->get_resolution_v() * sizeof(uint8_t));
-    // ppm2.flush();
 
     return 0;
 }

@@ -13,6 +13,8 @@
 #include "primitives/geometry.hpp"
 #include "primitives/ray.hpp"
 
+#include "path_tracing/backward.hpp"
+
 template <typename Scalar>
 Scene<Scalar>::Scene( Geometry<Scalar>* geometryList, uint N ) {
     // Store all BLAS:
@@ -124,9 +126,9 @@ template<typename Scalar>
 std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<Light<Scalar>*> lights){
 
     // THINGS TO MOVE OUTSIDE OF FUNCTION:
-    int tile_size = 20;
-    int max_samples = 10;
-	bool print_statements = false;
+    size_t tile_size = 20;
+    uint max_samples = 10;
+	bool print_statements = true;
 
     if (print_statements){
         std::cout << "Rendering...\n";
@@ -145,18 +147,28 @@ std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<L
     auto pixels = std::make_unique<float[]>(4 * width * height);
 
     // Loop over tiles:
-    for( int u = 0; u < camera.sensor->get_resolution_h(); u+=tile_size) {
-        for (int v = 0; v < camera.sensor->get_resolution_v(); v+=tile_size){
+    for( size_t u = 0; u < width; u+=tile_size) {
+        for (size_t v = 0; v < height; v+=tile_size){
+
+            // Determine if the tile reaches the end of the image:
+            size_t tile_width = tile_size;
+            size_t tile_height = tile_size;
+            if (width-u < tile_size){
+                tile_width = width-u;
+            }
+            if (height-v < tile_size){
+                tile_height = height-v;
+            }
 
             // Loop over pixels in current tile:
-            for (int x = 0; x < tile_size; x++){
-                for (int y = 0; y < tile_size; y++){
+            for (size_t x = 0; x < tile_width; x++){
+                for (size_t y = 0; y < tile_height; y++){
 
                     size_t index = 4 * (width * (v+y) + (u+x));
                     Vector3<Scalar> pixel_radiance(0);
 
                     // Loop over samples per pixel:
-                    for  (int sample = 0; sample < max_samples; ++sample) {
+                    for (uint sample = 0; sample < max_samples; ++sample) {
                         
                         // Generate a random sample:
                         Ray<Scalar> ray;
@@ -169,54 +181,8 @@ std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<L
                             ray = camera.pixel_to_ray(u+x + x_rand, v+y + y_rand);
                         }
 
-                        // Intersect ray with scene:
-                        Intersect( ray );
-
-                        // Skip illumination computation if no hit:
-                        if (ray.hit.t == std::numeric_limits<Scalar>::max()) {
-                            break;
-                        }
-
-                        // Calculate intersection point:
-                        auto intersect_point = ray.origin + ray.hit.t*ray.direction;
-
-                        // Get the data for the triangle intersected:
-                        auto tridata = ray.hit.geometry->triangle_data[ray.hit.triIdx];
-
-                        // Calculate the normal:
-                        Vector3<Scalar> normal;
-                        if (ray.hit.geometry->smooth_shading){
-                            normal = normalize<Scalar>(ray.hit.u*tridata.vn1 +
-                                                       ray.hit.v*tridata.vn2 + 
-                                                       (Scalar(1.0)-ray.hit.u-ray.hit.v)*tridata.vn0);
-                        }
-                        else {
-                            normal = tridata.face_normal;
-                        }
-
-                        // Calculate the texture-space UV coordinates:
-                        // auto interp_uv = u*tridata.uv1 + v*tridata.uv2 + (Scalar(1.0)-u-v)*tridata.uv0;
-
-                        // Cast ray towards the light source:
-                        for (auto light: lights){
-                            // Scalar tol = 0.0001;
-                            intersect_point = intersect_point + normal* (Scalar) 0.0001;
-                            Ray<Scalar> light_ray = light->sample_ray(intersect_point);
-                            Scalar light_distance = light_ray.t;
-                            Intersect( light_ray );
-
-                            // If ray is not obstructed, evaluate the illumination model:
-                            if (light_ray.hit.t > light_distance){// || light_ray.hit.t < tol) {
-                                // SIMPLE LAMBERTIAN BRDF:
-                                Scalar L_dot_N = dot(light_ray.direction, normal);
-                                Scalar intensity = light->get_intensity(intersect_point);
-                                pixel_radiance = pixel_radiance + Vector3<Scalar>(L_dot_N*intensity);
-
-                                // std::cout << L_dot_N*intensity << "\n";
-                                // TODO USE THE MATERIAL POINTER:
-                                
-                            }
-                        }
+                        // Evaluate path tracing:
+                        backward_trace(this, ray, lights, pixel_radiance);
 
                         // Run adaptive sampling, and bounce ray cast:
                         // TODO!
