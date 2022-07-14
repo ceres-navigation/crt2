@@ -15,6 +15,11 @@
 
 #include "path_tracing/backward.hpp"
 
+#include <oneapi/tbb.h>
+#include <oneapi/tbb/mutex.h>
+#include <oneapi/tbb/rw_mutex.h>
+#include <tbb/parallel_for.h>
+
 template <typename Scalar>
 Scene<Scalar>::Scene( std::vector<Geometry<Scalar>*> geometry_list) {
     // Store all BLAS:
@@ -164,6 +169,10 @@ std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<L
             }
 
             // Loop over pixels in current tile:
+            // tbb::parallel_for( tbb::blocked_range2d<size_t>(0, tile_width, 0, tile_height),//, 0, max_samples),
+            //         [=](const tbb::blocked_range2d<size_t>& r) {
+            // for (size_t x = r.cols().begin(); x < r.cols().end(); x++){
+            //     for (size_t y = r.rows().begin(); y < r.rows().end(); y++){
             for (size_t x = 0; x < tile_width; x++){
                 for (size_t y = 0; y < tile_height; y++){
 
@@ -171,6 +180,7 @@ std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<L
                     Vector3<Scalar> pixel_radiance(0);
 
                     // Loop over samples per pixel:
+                    // for (size_t sample = r.pages().begin(); sample < r.pages().end(); sample++){
                     for (uint sample = 0; sample < max_samples; ++sample) {
                         
                         // Generate a random sample:
@@ -198,6 +208,7 @@ std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<L
                     pixels[index + 3] = 1;
                 }
             }
+            // });
         }
     }
 
