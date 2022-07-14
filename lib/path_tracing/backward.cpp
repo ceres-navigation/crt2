@@ -35,7 +35,7 @@ void backward_trace(Scene<Scalar>* scene, Ray<Scalar>& ray, std::vector<Light<Sc
         }
 
         // Calculate the texture-space UV coordinates:
-        // auto interp_uv = u*tridata.uv1 + v*tridata.uv2 + (Scalar(1.0)-u-v)*tridata.uv0;
+        Vector2<Scalar> interp_uv = ray.hit.u*tridata.uv1 + ray.hit.v*tridata.uv2 + (Scalar(1.0)-ray.hit.u-ray.hit.v)*tridata.uv0;
 
         // Cast ray towards the light source:
         for (auto light: lights){
@@ -47,10 +47,8 @@ void backward_trace(Scene<Scalar>* scene, Ray<Scalar>& ray, std::vector<Light<Sc
 
             // If ray is not obstructed, evaluate the illumination model:
             if (light_ray.hit.t > light_distance){// || light_ray.hit.t < tol) {
-                // SIMPLE LAMBERTIAN BRDF:
-                Scalar L_dot_N = dot(light_ray.direction, normal);
-                Scalar intensity = light->get_intensity(intersect_point);
-                path_radiance = path_radiance + SpectralRadiance<Scalar>(L_dot_N*intensity);
+                SpectralRadiance<Scalar> radiance = ray.hit.geometry->material->illumination(light, light_ray, ray, intersect_point, normal, interp_uv);
+                path_radiance = path_radiance + radiance;
 
                 // TODO USE THE MATERIAL POINTER:
                 
@@ -63,7 +61,7 @@ void backward_trace(Scene<Scalar>* scene, Ray<Scalar>& ray, std::vector<Light<Sc
         }
 
         // Cast bounce ray:
-        Vector3<Scalar> bounce_direction(0);
+        Vector3<Scalar> bounce_direction = ray.hit.geometry->material->bounce_ray(normal, interp_uv);
         ray = Ray<Scalar>(intersect_point, bounce_direction);
     }
 };

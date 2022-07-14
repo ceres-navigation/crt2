@@ -11,6 +11,8 @@
 
 #include "acceleration/bvh.hpp"
 
+#include "materials/material.hpp"
+
 // Forward declaration of Ray class:
 template <typename Scalar>
 class Ray; 
@@ -27,6 +29,8 @@ class Geometry : public RigidBody<Scalar>{
         int magic_length = 6;
 
         BVH<Scalar>* bvh = nullptr;
+
+        Material<Scalar>* material = nullptr;
 
         // Triangle defintions:
         uint32_t num_triangles = 0;

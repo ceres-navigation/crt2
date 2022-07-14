@@ -13,6 +13,9 @@ add_library(
 
     lights/point_light.cpp
 
+    materials/lambertian.cpp
+    materials/sampling.cpp
+
     path_tracing/backward.cpp
 
     physics/spectral_radiance.cpp

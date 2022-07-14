@@ -21,6 +21,9 @@
 #include "primitives/triangle.hpp"
 #include "primitives/ray.hpp"
 
+#include "materials/material.hpp"
+#include "materials/lambertian.hpp"
+
 template <typename Scalar>
 Geometry<Scalar>::Geometry(const char* file_path, std::string file_type){
     if (file_type == "obj"){
@@ -37,6 +40,9 @@ Geometry<Scalar>::Geometry(const char* file_path, std::string file_type){
     }
 
     this->build_bvh();
+
+    // Assign the material:
+    this->material = new Lambertian<Scalar>();
 };
 
 template <typename Scalar>
@@ -44,6 +50,7 @@ Geometry<Scalar>::~Geometry(){
     delete this->triangles;
     delete this->triangle_data;
     delete this->bvh;
+    // delete this->material; // ??
 };
 
 template <typename Scalar>
