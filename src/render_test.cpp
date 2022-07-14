@@ -41,7 +41,7 @@ int main(){
 
     // Define a simple light:
     std::vector<Light<Scalar>*> lights;
-    lights.push_back(new PointLight<Scalar>(1));
+    lights.push_back(new PointLight<Scalar>(5));
     lights[0]->set_position(0,-3,0);
 
     std::vector<Geometry<Scalar>*> geometries;

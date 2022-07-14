@@ -15,6 +15,8 @@ add_library(
 
     path_tracing/backward.cpp
 
+    physics/spectral_radiance.cpp
+
     primitives/ray.cpp
     primitives/aabb.cpp
     primitives/triangle.cpp

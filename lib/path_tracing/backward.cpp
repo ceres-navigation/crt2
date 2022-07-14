@@ -1,11 +1,13 @@
 #include "path_tracing/backward.hpp"
 
+#include "physics/spectral_radiance.hpp"
+
 #include "scene.hpp"
 #include "primitives/ray.hpp"
 #include "lights/light.hpp"
 
 template<typename Scalar>
-void backward_trace(Scene<Scalar>* scene, Ray<Scalar>& ray, std::vector<Light<Scalar>*> &lights, uint num_bounces, Vector3<Scalar> &pixel_radiance){
+void backward_trace(Scene<Scalar>* scene, Ray<Scalar>& ray, std::vector<Light<Scalar>*> &lights, uint num_bounces, SpectralRadiance<Scalar> &path_radiance){
     for (uint bounce = 0; bounce < num_bounces+1; bounce++){
         // Intersect ray with scene:
         scene->Intersect( ray );
@@ -48,7 +50,7 @@ void backward_trace(Scene<Scalar>* scene, Ray<Scalar>& ray, std::vector<Light<Sc
                 // SIMPLE LAMBERTIAN BRDF:
                 Scalar L_dot_N = dot(light_ray.direction, normal);
                 Scalar intensity = light->get_intensity(intersect_point);
-                pixel_radiance = pixel_radiance + Vector3<Scalar>(L_dot_N*intensity);
+                path_radiance = path_radiance + SpectralRadiance<Scalar>(L_dot_N*intensity);
 
                 // TODO USE THE MATERIAL POINTER:
                 

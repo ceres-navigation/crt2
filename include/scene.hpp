@@ -19,7 +19,6 @@ struct TLASNode {
 template <typename Scalar>
 class Scene {
     public:
-        Scene() = default;
         Scene( std::vector<Geometry<Scalar>*> geometryList);
         void Build();
         void Intersect( Ray<Scalar>& ray );

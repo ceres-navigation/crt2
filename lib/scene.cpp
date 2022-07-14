@@ -13,6 +13,8 @@
 
 #include "primitives/ray.hpp"
 
+#include "physics/spectral_radiance.hpp"
+
 #include "path_tracing/backward.hpp"
 
 #include <oneapi/tbb.h>
@@ -135,7 +137,9 @@ std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<L
     // THINGS TO MOVE OUTSIDE OF FUNCTION:
     uint num_bounces = 0;
     size_t tile_size = 20;
-    uint max_samples = 10;
+    uint min_samples = 10;
+    uint max_samples = 20;
+    Scalar noise_threshold = 0.1;
 	bool print_statements = true;
 
     if (print_statements){
@@ -177,11 +181,10 @@ std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<L
                 for (size_t y = 0; y < tile_height; y++){
 
                     size_t index = 4 * (width * (v+y) + (u+x));
-                    Vector3<Scalar> pixel_radiance(0);
+                    SpectralRadiance<Scalar> pixel_radiance(0);
 
                     // Loop over samples per pixel:
-                    // for (size_t sample = r.pages().begin(); sample < r.pages().end(); sample++){
-                    for (uint sample = 0; sample < max_samples; ++sample) {
+                    for (uint sample = 1; sample < max_samples+1; sample++) {
                         
                         // Generate a random sample:
                         Ray<Scalar> ray;
@@ -195,10 +198,18 @@ std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<L
                         }
 
                         // Evaluate path tracing:
-                        backward_trace(this, ray, lights, num_bounces, pixel_radiance);
+                        Vector3<Scalar> path_radiance(0);
+                        backward_trace(this, ray, lights, num_bounces, path_radiance);
 
-                        // Run adaptive sampling, and bounce ray cast:
-                        // TODO!
+                        // Run adaptive sampling:
+                        SpectralRadiance<Scalar> rad_contrib = (path_radiance - pixel_radiance)*((Scalar) 1/sample);
+                        pixel_radiance += rad_contrib;
+                        if (sample >= min_samples) {
+                            Scalar noise = length(rad_contrib);
+                            if (noise < noise_threshold) {
+                                break;
+                            }
+                        }
                     }
 
                     // Store the pixel intensity:
