@@ -59,37 +59,27 @@ Rotation<Scalar> XYZ_euler(Scalar x, Scalar y, Scalar z){
 
 template <typename Scalar>
 Rotation<Scalar> XZY_euler(Scalar x, Scalar y, Scalar z){
-    Scalar elements[3][3];
-
-    return Rotation<Scalar>(elements);
+    return rotation_Y(y)*rotation_Z(z)*rotation_X(x);
 };
 
 template <typename Scalar>
 Rotation<Scalar> YXZ_euler(Scalar x, Scalar y, Scalar z){
-    Scalar elements[3][3];
-
-    return Rotation<Scalar>(elements);
+    return rotation_Z(z)*rotation_X(x)*rotation_Y(y);
 };
 
 template <typename Scalar>
 Rotation<Scalar> YZX_euler(Scalar x, Scalar y, Scalar z){
-    Scalar elements[3][3];
-
-    return Rotation<Scalar>(elements);
+    return rotation_X(x)*rotation_Z(z)*rotation_Y(y);
 };
 
 template <typename Scalar>
 Rotation<Scalar> ZXY_euler(Scalar x, Scalar y, Scalar z){
-    Scalar elements[3][3];
-
-    return Rotation<Scalar>(elements);
+    return rotation_Y(y)*rotation_X(x)*rotation_Z(z);
 };
 
 template <typename Scalar>
 Rotation<Scalar> ZYX_euler(Scalar x, Scalar y, Scalar z){
-    Scalar elements[3][3];
-
-    return Rotation<Scalar>(elements);
+    return rotation_X(x)*rotation_Y(y)*rotation_Z(z);
 };
 
 

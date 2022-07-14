@@ -46,8 +46,8 @@ int main(){
 
     std::vector<Geometry<Scalar>*> geometries;
     geometries.push_back(new Geometry<Scalar>("../suzanne.obj", "obj"));
-    geometries[0]->set_position(Vector3<Scalar>(0));
-    geometries[0]->set_rotation(XYZ_euler<Scalar>(0,0,0));
+    geometries[0]->set_position(Vector3<Scalar>(1,0,0));
+    geometries[0]->set_rotation(ZXY_euler<Scalar>(11,83,22));
 
     // Create the scene:
     auto scene = Scene<Scalar>(geometries);
