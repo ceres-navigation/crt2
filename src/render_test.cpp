@@ -24,7 +24,7 @@
 
 #include <chrono>
 
-using Scalar = float;
+using Scalar = double;
 
 int main(){
     // Define sensor:

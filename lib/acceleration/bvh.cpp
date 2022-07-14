@@ -35,12 +35,40 @@ void BVH<Scalar>::UpdateBounds(){
     Vector3<Scalar> bmin = this->bounds.bmin;
     Vector3<Scalar> bmax = this->bounds.bmax;
 
-    // Apply transformation from bdoy to world space:
-    transform(bmin);
-    transform(bmax);
+    Vector3<Scalar> b1(bmin[0], bmin[1], bmin[2]);
+    Vector3<Scalar> b2(bmin[0], bmax[1], bmin[2]);
+    Vector3<Scalar> b3(bmax[0], bmax[1], bmin[2]);
+    Vector3<Scalar> b4(bmax[0], bmin[1], bmin[2]);
 
-    this->bounds_world.bmin = bmin;
-    this->bounds_world.bmax = bmax;
+    Vector3<Scalar> t1(bmin[0], bmin[1], bmax[2]);
+    Vector3<Scalar> t2(bmin[0], bmax[1], bmax[2]);
+    Vector3<Scalar> t3(bmax[0], bmax[1], bmax[2]);
+    Vector3<Scalar> t4(bmax[0], bmin[1], bmax[2]);
+
+    // Apply transformation from bdoy to world space:
+    transform(b1);
+    transform(b2);
+    transform(b3);
+    transform(b4);
+    transform(t1);
+    transform(t2);
+    transform(t3);
+    transform(t4);
+
+
+    // Reset world bounds:
+    this->bounds_world.bmin = Vector3<Scalar>(std::numeric_limits<Scalar>::max());
+    this->bounds_world.bmax = Vector3<Scalar>(-std::numeric_limits<Scalar>::max());
+
+    // Grow the bounds based on 
+    this->bounds_world.grow(b1);
+    this->bounds_world.grow(b2);
+    this->bounds_world.grow(b3);
+    this->bounds_world.grow(b4);
+    this->bounds_world.grow(t1);
+    this->bounds_world.grow(t2);
+    this->bounds_world.grow(t3);
+    this->bounds_world.grow(t4);
 };
 
 template <typename Scalar>
@@ -247,13 +275,6 @@ void BVH<Scalar>::Intersect( Ray<Scalar>& ray ) {
     }
 };
 
-// template <typename Scalar>
-// void BVH<Scalar>::transform(Ray<Scalar> &ray){
-//     ray.origin = this->scale*ray.origin + this->position;
-//     ray.direction = this->rotation.rotate(ray.direction);
-//     ray.recip_direction = Vector3<Scalar>(1/ray.direction[0],1/ray.direction[1],1/ray.direction[2]);
-// };
-
 template <typename Scalar>
 void BVH<Scalar>::transform(Vector3<Scalar> &vector){
     vector = this->scale*this->rotation.rotate(vector) + this->position;
@@ -261,15 +282,10 @@ void BVH<Scalar>::transform(Vector3<Scalar> &vector){
 
 template <typename Scalar>
 void BVH<Scalar>::inverse_transform(Ray<Scalar> &ray){
-    ray.origin = this->recip_scale*this->inverse_rotation.rotate(ray.origin) - this->position;
+    ray.origin = this->recip_scale*this->inverse_rotation.rotate(ray.origin - this->position);
     ray.direction = this->inverse_rotation.rotate(ray.direction);
     ray.recip_direction = Vector3<Scalar>(1/ray.direction[0],1/ray.direction[1],1/ray.direction[2]);
 };
-
-// template <typename Scalar>
-// void BVH<Scalar>::inverse_transform(Vector3<Scalar> &vector){
-//     vector = this->recip_scale*this->inverse_rotation.rotate(vector) - this->position;
-// };
 
 // Explicitly Instantiate floats and doubles:
 template class BVH<float>;
