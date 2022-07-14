@@ -10,8 +10,6 @@
 #include "utils/vector.hpp"
 #include "utils/rotation.hpp"
 
-#include "acceleration/transform_node.hpp"
-
 // Forward declaration of Geometry class:
 template <typename Scalar>
 class Geometry;
@@ -43,13 +41,13 @@ class BVH{
         Rotation<Scalar> rotation = Rotation<Scalar>(); // Default to Identity
         bool transform_changed = false;
 
+        Scalar recip_scale = 1;
+        Rotation<Scalar> inverse_rotation = Rotation<Scalar>(); // Default to Identity
+
         Geometry<Scalar>* parent;
 
-        // Transformation Nodes:
-        int num_transformations = 0;
-        TransformNode<Scalar>* transform_nodes = nullptr;
-
-        AABB<Scalar> bounds; // in world space
+        AABB<Scalar> bounds; // in body (geometry) space
+        AABB<Scalar> bounds_world; // in world space
 
         BVHNode<Scalar>* bvhNode = nullptr;
         uint* triIdx = nullptr;
@@ -72,13 +70,15 @@ class BVH{
         void Subdivide( uint nodeIdx, int BINS);
         void Build(int BINS=8);
 
-        AABB<Scalar> Bounds();
-
         // Function for ray traversal:
         void InnerIntersect( Ray<Scalar>& ray, const uint nodeIdx);
-        void Intersect( Ray<Scalar>& ray, const uint nodeIdx = 0);
+        void Intersect( Ray<Scalar>& ray);
 
-        void UpdateTransforms();
+        void transform(Ray<Scalar> &ray);
+        void transform(Vector3<Scalar> &vector);
+
+        void inverse_transform(Ray<Scalar> &ray);
+        void inverse_transform(Vector3<Scalar> &vector);
 };
 
 #endif

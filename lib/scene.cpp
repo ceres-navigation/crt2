@@ -16,18 +16,18 @@
 #include "path_tracing/backward.hpp"
 
 template <typename Scalar>
-Scene<Scalar>::Scene( Geometry<Scalar>* geometryList, uint N ) {
+Scene<Scalar>::Scene( std::vector<Geometry<Scalar>*> geometry_list) {
     // Store all BLAS:
-    blas = new BVH<Scalar>[N];
-    for (uint i = 0; i < N; i++) {
-        blas[i] = *geometryList[i].bvh;
+    blas = new BVH<Scalar>[geometry_list.size()];
+    for (uint i = 0; i < geometry_list.size(); i++) {
+        blas[i] = *geometry_list[i]->bvh;
     }
 
     // copy a pointer to the array of bottom level accstructs
-    blasCount = N;
+    blasCount = geometry_list.size();
 
     // allocate Scene nodes
-    tlasNode = new TLASNode<Scalar>[2*N];
+    tlasNode = new TLASNode<Scalar>[2*geometry_list.size()];
     nodesUsed = 0;
 }
 
@@ -59,8 +59,10 @@ void Scene<Scalar>::Build() {
     nodesUsed = 1;
     for (uint i = 0; i < blasCount; i++) {
         nodeIdx[i] = nodesUsed;
-        tlasNode[nodesUsed].aabbMin = blas[i].bounds.bmin;
-        tlasNode[nodesUsed].aabbMax = blas[i].bounds.bmax;
+		std::cout << "bmin = ["<<blas[i].bounds_world.bmin[0]<<", "<<blas[i].bounds_world.bmin[1]<<", "<<blas[i].bounds_world.bmin[2]<<"]\n";
+		std::cout << "bmax = ["<<blas[i].bounds_world.bmax[0]<<", "<<blas[i].bounds_world.bmax[1]<<", "<<blas[i].bounds_world.bmax[2]<<"]\n";
+        tlasNode[nodesUsed].aabbMin = blas[i].bounds_world.bmin;
+        tlasNode[nodesUsed].aabbMax = blas[i].bounds_world.bmax;
         tlasNode[nodesUsed].blas_id = i;
         tlasNode[nodesUsed++].leftRight = 0;
     }

@@ -24,6 +24,8 @@ struct Rotation{
     Vector3<Scalar> rotate(Vector3<Scalar>);
 
     Rotation<Scalar> transpose();
+
+    Rotation<Scalar> operator*(const Rotation<Scalar> &matrix);
 };
 
 

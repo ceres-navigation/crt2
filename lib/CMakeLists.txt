@@ -24,6 +24,7 @@ add_library(
     utils/rigid_body.cpp
     utils/vector.cpp
     utils/rotation.cpp
+    utils/euler_angles.cpp
 )
 
 target_link_libraries(vira PRIVATE PUBLIC zstd)

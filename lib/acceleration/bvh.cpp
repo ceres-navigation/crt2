@@ -1,5 +1,4 @@
 #include "acceleration/bvh.hpp"
-#include "acceleration/transform_node.hpp"
 
 #include "primitives/triangle.hpp"
 #include "primitives/ray.hpp"
@@ -32,18 +31,16 @@ void BVH<Scalar>::set_parent(Geometry<Scalar>* parent){
 }
 
 template <typename Scalar>
-void BVH<Scalar>::UpdateBounds(){
+void BVH<Scalar>::UpdateBounds(){   
     Vector3<Scalar> bmin = this->bounds.bmin;
     Vector3<Scalar> bmax = this->bounds.bmax;
-    // Apply all transformations:
-    for (int i = 0; i < num_transformations; i++){
-        transform_nodes[i].apply(bmin);
-        transform_nodes[i].apply(bmax);
-    }
 
-    // TODO Just replace the AABB rather than using "grow":
-    this->bounds.bmin = bmin;
-    this->bounds.bmax = bmax;
+    // Apply transformation from bdoy to world space:
+    transform(bmin);
+    transform(bmax);
+
+    this->bounds_world.bmin = bmin;
+    this->bounds_world.bmax = bmax;
 };
 
 template <typename Scalar>
@@ -232,31 +229,47 @@ void BVH<Scalar>::InnerIntersect( Ray<Scalar>& ray, const uint nodeIdx ) {
 };
 
 template <typename Scalar>
-void BVH<Scalar>::Intersect( Ray<Scalar>& ray, const uint nodeIdx ) {
-    // Apply the transformations:
-    Ray<Scalar> backup_ray = ray;
-    for (int i = 0; i < num_transformations; i++){
-        transform_nodes[i].invert(ray);
-    }
+void BVH<Scalar>::Intersect( Ray<Scalar>& ray ) {
+    // Test the ray against world space pose of the bounding box:
+    if (intersect_aabb( ray, bounds_world.bmin, bounds_world.bmax ) != std::numeric_limits<Scalar>::max()){
+        // Rotate the ray into the BVH frame:
+        Ray<Scalar> backup_ray = ray;
+        inverse_transform(ray);
 
-    // Trace the ray:
-    BVHNode<Scalar>& node = bvhNode[nodeIdx];
-    if (intersect_aabb( ray, node.aabbMin, node.aabbMax ) != std::numeric_limits<Scalar>::max()){
+        BVHNode<Scalar>& node = bvhNode[0];
         InnerIntersect( ray, node.leftFirst );
         InnerIntersect( ray, node.leftFirst + 1 );
-    }
 
-    // Reset the ray:
-    backup_ray.t = ray.t;
-    backup_ray.hit = ray.hit;
-    ray = backup_ray;
+        // Reset the ray:
+        backup_ray.t = ray.t;
+        backup_ray.hit = ray.hit;
+        ray = backup_ray;
+    }
+};
+
+// template <typename Scalar>
+// void BVH<Scalar>::transform(Ray<Scalar> &ray){
+//     ray.origin = this->scale*ray.origin + this->position;
+//     ray.direction = this->rotation.rotate(ray.direction);
+//     ray.recip_direction = Vector3<Scalar>(1/ray.direction[0],1/ray.direction[1],1/ray.direction[2]);
+// };
+
+template <typename Scalar>
+void BVH<Scalar>::transform(Vector3<Scalar> &vector){
+    vector = this->scale*this->rotation.rotate(vector) + this->position;
 };
 
 template <typename Scalar>
-AABB<Scalar> BVH<Scalar>::Bounds() {
-	BVHNode<Scalar>& node = bvhNode[0];
-	return { .bmin = node.aabbMin, .bmax = node.aabbMax  };
-}
+void BVH<Scalar>::inverse_transform(Ray<Scalar> &ray){
+    ray.origin = this->recip_scale*this->inverse_rotation.rotate(ray.origin) - this->position;
+    ray.direction = this->inverse_rotation.rotate(ray.direction);
+    ray.recip_direction = Vector3<Scalar>(1/ray.direction[0],1/ray.direction[1],1/ray.direction[2]);
+};
+
+// template <typename Scalar>
+// void BVH<Scalar>::inverse_transform(Vector3<Scalar> &vector){
+//     vector = this->recip_scale*this->inverse_rotation.rotate(vector) - this->position;
+// };
 
 // Explicitly Instantiate floats and doubles:
 template class BVH<float>;

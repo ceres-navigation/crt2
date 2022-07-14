@@ -17,14 +17,9 @@
 
 #include "geometry.hpp"
 #include "acceleration/bvh.hpp"
-#include "acceleration/translate_node.hpp"
 
 #include "primitives/triangle.hpp"
 #include "primitives/ray.hpp"
-
-template <typename Scalar>
-Geometry<Scalar>::Geometry(){
-};
 
 template <typename Scalar>
 Geometry<Scalar>::Geometry(const char* file_path, std::string file_type){
@@ -61,17 +56,18 @@ void Geometry<Scalar>::set_scale(Scalar new_scale){
     this->scale = new_scale;
 
     this->bvh->scale = new_scale;
+    this->bvh->recip_scale = 1/new_scale;
+
     this->bvh->transform_changed = true;
     this->bvh->UpdateBounds();
 };
 template <typename Scalar>
 void Geometry<Scalar>::set_position(Vector3<Scalar> new_position) {
     this->position = new_position;
-
+    
     this->bvh->position = new_position;
+
     this->bvh->transform_changed = true;
-    this->bvh->transform_nodes = new TranslateNode<Scalar>(new_position);
-    this->bvh->num_transformations = 1;
     this->bvh->UpdateBounds();
 };
 template <typename Scalar>
@@ -79,6 +75,8 @@ void Geometry<Scalar>::set_rotation(Rotation<Scalar> new_rotation){
     this->rotation = new_rotation;
 
     this->bvh->rotation = new_rotation;
+    this->bvh->inverse_rotation = new_rotation.transpose();
+
     this->bvh->transform_changed = true;
     this->bvh->UpdateBounds();
 };
@@ -89,6 +87,8 @@ void Geometry<Scalar>::set_pose(Vector3<Scalar> new_position, Rotation<Scalar> n
 
     this->bvh->position = new_position;
     this->bvh->rotation = new_rotation;
+    this->bvh->inverse_rotation = new_rotation.transpose();
+
     this->bvh->transform_changed = true;
     this->bvh->UpdateBounds();
 };
@@ -99,8 +99,11 @@ void Geometry<Scalar>::set_transform(Scalar new_scale, Vector3<Scalar> new_posit
     this->rotation = new_rotation;
 
     this->bvh->scale    = new_scale;
+    this->bvh->recip_scale = 1/new_scale;
     this->bvh->position = new_position;
     this->bvh->rotation = new_rotation;
+    this->bvh->inverse_rotation = new_rotation.transpose();
+
     this->bvh->transform_changed = true;
     this->bvh->UpdateBounds();
 };

@@ -1,6 +1,8 @@
 #ifndef __SCENE_H_
 #define __SCENE_H_
 
+#include <vector>
+
 #include "cameras/camera.hpp"
 #include "lights/light.hpp"
 #include "geometry.hpp"
@@ -18,7 +20,7 @@ template <typename Scalar>
 class Scene {
     public:
         Scene() = default;
-        Scene( Geometry<Scalar>* geometryList, uint N );
+        Scene( std::vector<Geometry<Scalar>*> geometryList);
         void Build();
         void Intersect( Ray<Scalar>& ray );
 

@@ -5,6 +5,9 @@
 #include "lodepng.h"
 
 #include "utils/vector.hpp"
+#include "utils/rotation.hpp"
+#include "utils/euler_angles.hpp"
+
 #include "sensors/simple_sensor.hpp"
 
 #include "cameras/camera.hpp"
@@ -27,29 +30,27 @@ int main(){
     // Define sensor:
     Scalar resolution[2] = {500,500};
     // Scalar resolution[2] = {100,100};
-    Scalar size[2] = {30,30};
+    Scalar size[2] = {36,36};
     SimpleSensor<Scalar> sensor(resolution, size);
 
     // Define camera:
-    SimpleCamera<Scalar> camera(30, sensor, true);
-    camera.set_position(0,0,-5);
+    SimpleCamera<Scalar> camera(50, sensor, false);
+    camera.set_position(4,-4,1.1);
+    Rotation<Scalar> rotation = XYZ_euler<Scalar>(78,0,44);
+    camera.set_rotation(rotation);
 
     // Define a simple light:
     std::vector<Light<Scalar>*> lights;
-    lights.push_back(new PointLight<Scalar>(10));
-    lights[0]->set_position(10,0,5);
+    lights.push_back(new PointLight<Scalar>(1));
+    lights[0]->set_position(0,-3,0);
 
-    // Load geometries:
-    int N = 7;
-    Geometry<Scalar>* geometries = new Geometry<Scalar>[N];
-    for (int i = 0; i < N; i++) {
-        geometries[i].read_obj("../suzanne.obj");//, "obj");
-        geometries[i].build_bvh();
-        geometries[i].set_position(Vector3<Scalar>(2.5*i -7, 2.5*i - 7, 9));
-    }
+    std::vector<Geometry<Scalar>*> geometries;
+    geometries.push_back(new Geometry<Scalar>("../suzanne.obj", "obj"));
+    geometries[0]->set_position(Vector3<Scalar>(0));
+    geometries[0]->set_rotation(XYZ_euler<Scalar>(0,0,0));
 
     // Create the scene:
-    auto scene = Scene<Scalar>(geometries, N);
+    auto scene = Scene<Scalar>(geometries);
     scene.Build();
 
     // Render:

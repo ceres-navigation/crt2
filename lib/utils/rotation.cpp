@@ -29,6 +29,19 @@ Rotation<Scalar> Rotation<Scalar>::transpose(){
     return Rotation<Scalar>(transposed_elements);
 }
 
+template <typename Scalar>
+Rotation<Scalar> Rotation<Scalar>::operator*(const Rotation<Scalar> &matrix){
+    Scalar elements_new[3][3] = {0};
+    for (int i = 0; i < 3; i++){
+        for (int j = 0; j < 3; j++){
+            for (int k = 0; k < 3; k++){
+                elements_new[i][j] += this->elements[i][k]*matrix.elements[k][j];
+            }
+        }
+    }
+    return Rotation<Scalar>(elements_new);
+};
+
 
 // Explicitly Instantiate floats and doubles:
 template struct Rotation<float>;

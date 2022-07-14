@@ -36,8 +36,6 @@ class Geometry : public RigidBody<Scalar>{
         // Material definitions:
         bool smooth_shading = false; // TODO MAKE THIS CONFIGURABLE
 
-        Geometry();
-
         Geometry(const char* file_path, std::string file_type);
 
         ~Geometry();
@@ -53,7 +51,7 @@ class Geometry : public RigidBody<Scalar>{
         void set_pose(Vector3<Scalar> new_position, Rotation<Scalar> new_rotation);
         void set_transform(Scalar new_scale, Vector3<Scalar> new_position, Rotation<Scalar> new_rotation);
 
-    // private: 
+    private: 
         void build_bvh(int BINS=8);
 
         void construct_triangles(std::vector<Vector3<Scalar>> vertices, 
