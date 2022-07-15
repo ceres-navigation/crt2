@@ -28,26 +28,29 @@ using Scalar = double;
 
 int main(){
     // Define sensor:
-    Scalar resolution[2] = {500,500};
+    Scalar resolution[2] = {600,600};
     // Scalar resolution[2] = {100,100};
     Scalar size[2] = {36,36};
     SimpleSensor<Scalar> sensor(resolution, size);
 
     // Define camera:
     SimpleCamera<Scalar> camera(50, sensor, false);
-    camera.set_position(4,-4,1.1);
-    Rotation<Scalar> rotation = XYZ_euler<Scalar>(78,0,44);
+    camera.set_position(0.01,0.34,-0.11);
+    Rotation<Scalar> rotation = XYZ_euler<Scalar>(90,0,180);
     camera.set_rotation(rotation);
 
     // Define a simple light:
     std::vector<Light<Scalar>*> lights;
-    lights.push_back(new PointLight<Scalar>(5));
-    lights[0]->set_position(0,-3,0);
+    lights.push_back(new PointLight<Scalar>(500));
+    lights[0]->set_position(0,3,1.5);
 
     std::vector<Geometry<Scalar>*> geometries;
-    geometries.push_back(new Geometry<Scalar>("../suzanne.obj", "obj"));
-    geometries[0]->set_position(Vector3<Scalar>(1,0,0));
-    geometries[0]->set_rotation(ZXY_euler<Scalar>(11,83,22));
+    
+    // geometries.push_back(new Geometry<Scalar>("../suzanne.obj", "obj"));
+    // geometries[0]->set_position(Vector3<Scalar>(1,0,0));
+    // geometries[0]->set_rotation(ZXY_euler<Scalar>(11,83,22));
+    // geometries.push_back(new Geometry<Scalar>("../../BENNU/global_set_a/l_00050mm_alt_dtm_3041s08903_v021.obj", "obj"));
+    geometries.push_back(new Geometry<Scalar>("../../BENNU/binary_global_set/l_00050mm_alt_dtm_3041s08903_v021.bin", "binary"));
 
     // Create the scene:
     auto scene = Scene<Scalar>(geometries);

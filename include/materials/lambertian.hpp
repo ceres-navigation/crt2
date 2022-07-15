@@ -23,10 +23,10 @@ class Lambertian : public Material<Scalar> {
 
         ~Lambertian();
 
-        SpectralRadiance<Scalar> illumination(Light<Scalar>* light, Ray<Scalar> &light_ray, Ray<Scalar> &view_ray,
-                                              Vector3<Scalar> &intersect_point, Vector3<Scalar> &normal, Vector2<Scalar> &interp_uv);
+        SpectralRadiance<Scalar> get_color(Ray<Scalar> &light_ray, Ray<Scalar> &view_ray,
+                                           Vector3<Scalar> &normal, Vector2<Scalar> &interp_uv);
 
-        Vector3<Scalar> bounce_ray(Vector3<Scalar> &normal, Vector2<Scalar> &interp_uv);
+        Vector3<Scalar> bounce_ray(Ray<Scalar> &ray, Vector3<Scalar> &normal, Vector2<Scalar> &interp_uv);
 };
 
 #endif

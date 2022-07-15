@@ -46,7 +46,7 @@ class Geometry : public RigidBody<Scalar>{
 
         void intersect(Ray<Scalar> &ray);
 
-        // void write_binary(const char* file_path);
+        void write_binary(const char* file_path);
 
         // Transform setting methods:
         void set_scale(Scalar new_scale);
@@ -65,7 +65,7 @@ class Geometry : public RigidBody<Scalar>{
 
         // Read from file methods:
         void read_obj(const char* file_path);
-        // void read_binary(const char* file_path);
+        void read_binary(const char* file_path);
 };
 
 #endif

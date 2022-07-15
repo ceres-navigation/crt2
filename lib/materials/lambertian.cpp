@@ -19,15 +19,15 @@ Lambertian<Scalar>::~Lambertian(){
 };
 
 template <typename Scalar>
-SpectralRadiance<Scalar> Lambertian<Scalar>::illumination(Light<Scalar>* light, Ray<Scalar> &light_ray, Ray<Scalar> &view_ray, 
-                                                          Vector3<Scalar> &intersect_point, Vector3<Scalar> &normal, Vector2<Scalar> &interp_uv){
+SpectralRadiance<Scalar> Lambertian<Scalar>::get_color(Ray<Scalar> &light_ray, Ray<Scalar> &view_ray, 
+                                                       Vector3<Scalar> &normal, Vector2<Scalar> &interp_uv){
     Scalar L_dot_N = dot(light_ray.direction, normal);
-    Scalar intensity = light->get_intensity(intersect_point);
-    return SpectralRadiance<Scalar>(intensity*L_dot_N);
+
+    return SpectralRadiance<Scalar>(L_dot_N);
 };
 
 template <typename Scalar>
-Vector3<Scalar> Lambertian<Scalar>::bounce_ray(Vector3<Scalar> &normal, Vector2<Scalar> &interp_uv){
+Vector3<Scalar> Lambertian<Scalar>::bounce_ray(Ray<Scalar> &ray, Vector3<Scalar> &normal, Vector2<Scalar> &interp_uv){
     Scalar r1 = distribution(generator);
     Scalar r2 = distribution(generator);
     return cosine_importance<Scalar>(normal,r1,r2);

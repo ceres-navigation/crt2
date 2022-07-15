@@ -6,8 +6,12 @@
 #include "primitives/ray.hpp"
 #include "lights/light.hpp"
 
+#include <math.h>
+
 template<typename Scalar>
 void backward_trace(Scene<Scalar>* scene, Ray<Scalar>& ray, std::vector<Light<Scalar>*> &lights, uint num_bounces, SpectralRadiance<Scalar> &path_radiance){
+    
+    Vector3<Scalar> weight(2*M_PI);
     for (uint bounce = 0; bounce < num_bounces+1; bounce++){
         // Intersect ray with scene:
         scene->Intersect( ray );
@@ -38,6 +42,7 @@ void backward_trace(Scene<Scalar>* scene, Ray<Scalar>& ray, std::vector<Light<Sc
         Vector2<Scalar> interp_uv = ray.hit.u*tridata.uv1 + ray.hit.v*tridata.uv2 + (Scalar(1.0)-ray.hit.u-ray.hit.v)*tridata.uv0;
 
         // Cast ray towards the light source:
+        SpectralRadiance<Scalar> bounce_color;
         for (auto light: lights){
             // Scalar tol = 0.0001;
             intersect_point = intersect_point + normal* (Scalar) 0.0001;
@@ -47,11 +52,8 @@ void backward_trace(Scene<Scalar>* scene, Ray<Scalar>& ray, std::vector<Light<Sc
 
             // If ray is not obstructed, evaluate the illumination model:
             if (light_ray.hit.t > light_distance){// || light_ray.hit.t < tol) {
-                SpectralRadiance<Scalar> radiance = ray.hit.geometry->material->illumination(light, light_ray, ray, intersect_point, normal, interp_uv);
-                path_radiance = path_radiance + radiance;
-
-                // TODO USE THE MATERIAL POINTER:
-                
+                bounce_color = ray.hit.geometry->material->get_color(light_ray, ray, normal, interp_uv);
+                path_radiance = path_radiance + light->get_intensity(intersect_point)*bounce_color*weight;
             }
         }
 
@@ -61,8 +63,9 @@ void backward_trace(Scene<Scalar>* scene, Ray<Scalar>& ray, std::vector<Light<Sc
         }
 
         // Cast bounce ray:
-        Vector3<Scalar> bounce_direction = ray.hit.geometry->material->bounce_ray(normal, interp_uv);
+        Vector3<Scalar> bounce_direction = ray.hit.geometry->material->bounce_ray(ray, normal, interp_uv);
         ray = Ray<Scalar>(intersect_point, bounce_direction);
+        weight *= bounce_color;
     }
 };
 

@@ -141,13 +141,11 @@ int main(int argc, char** argv)
     if (is_file){
         auto start = std::chrono::system_clock::now();
         if (use_doubles){
-            Geometry<double> geometry;
-            geometry.read_obj(input.c_str());
+            Geometry<double> geometry(input.c_str(),"obj");
             geometry.write_binary(output.c_str());
         }
         else{
-            Geometry<float> geometry;
-            geometry.read_obj(input.c_str());
+            Geometry<float> geometry(input.c_str(),"obj");
             geometry.write_binary(output.c_str());
         }
         auto end = std::chrono::system_clock::now();
@@ -176,13 +174,11 @@ int main(int argc, char** argv)
                     output_filename /= filename;
 
                     if (use_doubles){
-                        Geometry<double> geometry;
-                        geometry.read_obj(path.c_str());
+                        Geometry<double> geometry(path.c_str(),"obj");
                         geometry.write_binary(output_filename.c_str());
                     }
                     else {
-                        Geometry<float> geometry;
-                        geometry.read_obj(path.c_str());
+                        Geometry<float> geometry(path.c_str(),"obj");
                         geometry.write_binary(output_filename.c_str());
                     }
 
@@ -204,13 +200,11 @@ int main(int argc, char** argv)
                     output_filename /= filename;
 
                     if (use_doubles){
-                        Geometry<double> geometry;
-                        geometry.read_obj(p.path().c_str());
+                        Geometry<double> geometry(p.path().c_str(),"obj");
                         geometry.write_binary(output_filename.c_str());
                     }
                     else {
-                        Geometry<float> geometry;
-                        geometry.read_obj(p.path().c_str());
+                        Geometry<float> geometry(p.path().c_str(),"obj");
                         geometry.write_binary(output_filename.c_str());
                     }
 

@@ -55,7 +55,6 @@ void BVH<Scalar>::UpdateBounds(){
     transform(t3);
     transform(t4);
 
-
     // Reset world bounds:
     this->bounds_world.bmin = Vector3<Scalar>(std::numeric_limits<Scalar>::max());
     this->bounds_world.bmax = Vector3<Scalar>(-std::numeric_limits<Scalar>::max());

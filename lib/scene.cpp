@@ -17,10 +17,12 @@
 
 #include "path_tracing/backward.hpp"
 
-#include <oneapi/tbb.h>
-#include <oneapi/tbb/mutex.h>
-#include <oneapi/tbb/rw_mutex.h>
-#include <tbb/parallel_for.h>
+// #include <oneapi/tbb.h>
+// #include <oneapi/tbb/mutex.h>
+// #include <oneapi/tbb/rw_mutex.h>
+// typedef tbb::mutex mutex_t;
+// typedef tbb::rw_mutex rw_mutex_t;
+// #include <tbb/parallel_for.h>
 
 template <typename Scalar>
 Scene<Scalar>::Scene( std::vector<Geometry<Scalar>*> geometry_list) {
@@ -158,6 +160,10 @@ std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<L
     size_t height = (size_t) floor(camera.sensor->get_resolution_v());
     auto pixels = std::make_unique<float[]>(4 * width * height);
 
+    // Use sensor sensitivity and pixel size:
+    // Scalar radiance_to_pixel = camera.sensor->radiance_to_pixel();
+    Scalar radiance_to_pixel = (camera.sensor->size[0]/width)*(camera.sensor->size[1]/height);
+
     // Loop over tiles:
     for( size_t u = 0; u < width; u+=tile_size) {
         for (size_t v = 0; v < height; v+=tile_size){
@@ -173,10 +179,9 @@ std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<L
             }
 
             // Loop over pixels in current tile:
-            // tbb::parallel_for( tbb::blocked_range2d<size_t>(0, tile_width, 0, tile_height),//, 0, max_samples),
-            //         [=](const tbb::blocked_range2d<size_t>& r) {
-            // for (size_t x = r.cols().begin(); x < r.cols().end(); x++){
-            //     for (size_t y = r.rows().begin(); y < r.rows().end(); y++){
+            // tbb::parallel_for( tbb::blocked_range2d<size_t>(0, tile_width, 0, tile_height), [=](const tbb::blocked_range2d<size_t>& r) {
+            // for (size_t x = r.cols().begin(), x_end=r.cols().end(); x<x_end; x++){
+            //     for (size_t y = r.rows().begin(), y_end=r.rows().end(); y<y_end; y++){
             for (size_t x = 0; x < tile_width; x++){
                 for (size_t y = 0; y < tile_height; y++){
 
@@ -199,7 +204,7 @@ std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<L
 
                         // Evaluate path tracing:
                         Vector3<Scalar> path_radiance(0);
-                        backward_trace(this, ray, lights, num_bounces, path_radiance);
+                        backward_trace<Scalar>(this, ray, lights, num_bounces, path_radiance);
 
                         // Run adaptive sampling:
                         SpectralRadiance<Scalar> rad_contrib = (path_radiance - pixel_radiance)*((Scalar) 1/sample);
@@ -213,13 +218,13 @@ std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<L
                     }
 
                     // Store the pixel intensity:
-                    pixels[index    ] = pixel_radiance[0];
-                    pixels[index + 1] = pixel_radiance[1];
-                    pixels[index + 2] = pixel_radiance[2];
+                    pixels[index    ] = pixel_radiance[0]*radiance_to_pixel;
+                    pixels[index + 1] = pixel_radiance[1]*radiance_to_pixel;
+                    pixels[index + 2] = pixel_radiance[2]*radiance_to_pixel;
                     pixels[index + 3] = 1;
                 }
             }
-            // });
+            // }); // UNCOMMENT THIS OUT FOR TBB
         }
     }
 
