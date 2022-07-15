@@ -392,6 +392,11 @@ void Geometry<Scalar>::read_binary(const char* file_path){
         triangles[i].vertex0 = Vector3<Scalar>(t_array[i][0],t_array[i][1],t_array[i][2]);
         triangles[i].vertex1 = Vector3<Scalar>(t_array[i][3],t_array[i][4],t_array[i][5]);
         triangles[i].vertex2 = Vector3<Scalar>(t_array[i][6],t_array[i][7],t_array[i][8]);
+
+        // Calculate face normal:
+        Vector3<Scalar> edge1 = this->triangles[i].vertex1 - this->triangles[i].vertex0;
+        Vector3<Scalar> edge2 = this->triangles[i].vertex2 - this->triangles[i].vertex0;
+        this->triangle_data[i].face_normal = normalize<Scalar>(cross<Scalar>(edge1, edge2));
     }
 
     // Release heap allocated arrays:
