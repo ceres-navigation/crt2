@@ -14,7 +14,6 @@
 template <typename Scalar>
 class Geometry;
 
-
 template <typename Scalar>
 struct BVHNode {
     Vector3<Scalar> aabbMin, aabbMax;
@@ -46,6 +45,8 @@ class BVH{
 
         Geometry<Scalar>* parent;
 
+        bool loaded;
+
         AABB<Scalar> bounds; // in body (geometry) space
         AABB<Scalar> bounds_world; // in world space
 
@@ -53,6 +54,8 @@ class BVH{
         uint* triIdx = nullptr;
 
         BVH();
+
+        BVH(AABB<Scalar> bounds);
 
         BVH(Triangle<Scalar>* triangles, uint num_triangles);
 
@@ -63,6 +66,8 @@ class BVH{
         void UpdateNodeBounds( uint nodeIdx );
 
         void set_parent(Geometry<Scalar>* parent);
+
+        void init(Triangle<Scalar>* triangles, uint num_triangles);
 
         // Functions for Binned BVH building:
         Scalar FindBestSplitPlane( BVHNode<Scalar>& node, int& axis, Scalar& splitPos);

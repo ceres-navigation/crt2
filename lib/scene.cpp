@@ -27,9 +27,9 @@
 template <typename Scalar>
 Scene<Scalar>::Scene( std::vector<Geometry<Scalar>*> geometry_list) {
     // Store all BLAS:
-    blas = new BVH<Scalar>[geometry_list.size()];
+    blas = new BVH<Scalar>*[geometry_list.size()];
     for (uint i = 0; i < geometry_list.size(); i++) {
-        blas[i] = *geometry_list[i]->bvh;
+        blas[i] = geometry_list[i]->bvh;
     }
 
     // copy a pointer to the array of bottom level accstructs
@@ -68,10 +68,8 @@ void Scene<Scalar>::Build() {
     nodesUsed = 1;
     for (uint i = 0; i < blasCount; i++) {
         nodeIdx[i] = nodesUsed;
-		std::cout << "bmin = ["<<blas[i].bounds_world.bmin[0]<<", "<<blas[i].bounds_world.bmin[1]<<", "<<blas[i].bounds_world.bmin[2]<<"]\n";
-		std::cout << "bmax = ["<<blas[i].bounds_world.bmax[0]<<", "<<blas[i].bounds_world.bmax[1]<<", "<<blas[i].bounds_world.bmax[2]<<"]\n";
-        tlasNode[nodesUsed].aabbMin = blas[i].bounds_world.bmin;
-        tlasNode[nodesUsed].aabbMax = blas[i].bounds_world.bmax;
+		tlasNode[nodesUsed].aabbMin = blas[i]->bounds_world.bmin;
+        tlasNode[nodesUsed].aabbMax = blas[i]->bounds_world.bmax;
         tlasNode[nodesUsed].blas_id = i;
         tlasNode[nodesUsed++].leftRight = 0;
     }
@@ -109,7 +107,7 @@ void Scene<Scalar>::Intersect( Ray<Scalar>& ray ) {
 	uint stackPtr = 0;
 	while (1) {
         if (node->isLeaf()) {
-			blas[node->blas_id].Intersect( ray );
+			blas[node->blas_id]->Intersect( ray );
 			if (stackPtr == 0) break; else node = stack[--stackPtr];
 			continue;
 		}

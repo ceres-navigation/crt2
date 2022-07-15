@@ -31,18 +31,16 @@ template <typename Scalar>
 Geometry<Scalar>::Geometry(const char* file_path, std::string file_type){
     if (file_type == "obj"){
         read_obj(file_path);
+        this->build_bvh();
     }
     else if (file_type == "binary"){
-        read_binary(file_path);
+        read_binary_header(file_path);
+        this->bvh_aabb_only();
     }
     else {
         std::cout << "file_type of: " << file_type << " is INVALID.  Must be 'obj' or 'binary'.\n";
         exit(2);
     }
-
-    this->build_bvh();
-
-    this->bvh->UpdateBounds();
 
     // Assign the material:
     this->material = new Lambertian<Scalar>();
@@ -123,7 +121,23 @@ void Geometry<Scalar>::build_bvh(int BINS){
     this->bvh = new BVH<Scalar>(this->triangles, this->num_triangles);
     this->bvh->set_parent(this);
     this->bvh->Build(BINS);
+    this->bvh->UpdateBounds();
 }
+
+template <typename Scalar>
+void Geometry<Scalar>::bvh_aabb_only(){
+    this->bvh = new BVH<Scalar>(bounds);
+    this->bvh->set_parent(this);
+    this->bvh->UpdateBounds();
+};
+
+template <typename Scalar>
+void Geometry<Scalar>::load(){
+    read_binary(binary_file_path.c_str());
+    this->bvh->init(this->triangles, this->num_triangles);
+    this->bvh->Build();
+    this->bvh->UpdateBounds();
+};
 
 template <typename Scalar>
 void Geometry<Scalar>::construct_triangles(std::vector<Vector3<Scalar>> vertices, 
@@ -237,9 +251,6 @@ void Geometry<Scalar>::read_binary_header(const char* file_path){
     // Read the file:
     FILE* file = fopen(file_path, "rb");
 
-    // Declare AABB:
-    AABB<Scalar> bounds;
-
     // Determine if using doubles:
     bool is_double;
 
@@ -261,18 +272,20 @@ void Geometry<Scalar>::read_binary_header(const char* file_path){
     read_bounds<Scalar>(file, is_double, bounds);
 
     fclose(file);
+
+    std::string path_string(file_path);
+    this->binary_file_path = path_string;
 }
 
 template <typename Scalar>
 void Geometry<Scalar>::read_binary(const char* file_path){
+
+    std::cout << "Reading binary from: "<< file_path << "\n";
     char magic_return[magic_length];
     uint32_t t_compressed_size;
     
     // Read the file:
     FILE* file = fopen(file_path, "rb");
-
-    // Declare AABB:
-    AABB<Scalar> bounds;
 
     // Determine if using doubles:
     bool is_double;
@@ -339,7 +352,7 @@ void Geometry<Scalar>::write_binary(const char* file_path){
     size_t size_bound;
 
     // Obtain the axis aligned bounding box:
-    AABB<Scalar> bounds = this->bvh->bounds;
+    bounds = this->bvh->bounds;
 
     // Compress the triangles:
     size_t t_size = num_triangles*9*sizeof(Scalar);

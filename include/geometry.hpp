@@ -17,7 +17,6 @@
 template <typename Scalar>
 class Ray; 
 
-
 template <typename Scalar>
 class Geometry : public RigidBody<Scalar>{
     public:
@@ -30,6 +29,7 @@ class Geometry : public RigidBody<Scalar>{
 
         std::string binary_file_path;
 
+        AABB<Scalar> bounds;
         BVH<Scalar>* bvh = nullptr;
 
         Material<Scalar>* material = nullptr;
@@ -57,8 +57,14 @@ class Geometry : public RigidBody<Scalar>{
         void set_pose(Vector3<Scalar> new_position, Rotation<Scalar> new_rotation);
         void set_transform(Scalar new_scale, Vector3<Scalar> new_position, Rotation<Scalar> new_rotation);
 
+
+        // Lazy loading methods:
+        void load();
+
     private: 
         void build_bvh(int BINS=8);
+
+        void bvh_aabb_only();
 
         void construct_triangles(std::vector<Vector3<Scalar>> vertices, 
                                  std::vector<std::vector<uint32_t>> faces,

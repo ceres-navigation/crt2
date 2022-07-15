@@ -6,8 +6,16 @@
 #include "utils/vector.hpp"
 #include "utils/rotation.hpp"
 
+#include "geometry.hpp"
+
 template <typename Scalar>
 BVH<Scalar>::BVH(){
+};
+
+template <typename Scalar>
+BVH<Scalar>::BVH(AABB<Scalar> bounds){
+    this->bounds = bounds;
+    this->loaded = false;
 };
 
 template <typename Scalar>
@@ -17,12 +25,23 @@ BVH<Scalar>::BVH(Triangle<Scalar>* triangles, uint num_triangles) {
     this->bvhNode = new BVHNode<Scalar>[N*2];
     this->triIdx = new uint[N];
     this->nodesUsed = 1;
+    this->loaded = true;
 };
 
 template <typename Scalar>
 BVH<Scalar>::~BVH(){
     delete this->bvhNode;
     delete this->triIdx;
+};
+
+template <typename Scalar>
+void BVH<Scalar>::init(Triangle<Scalar>* triangles, uint num_triangles) {
+    this->tri = triangles;
+    this->N = num_triangles;
+    this->bvhNode = new BVHNode<Scalar>[N*2];
+    this->triIdx = new uint[N];
+    this->nodesUsed = 1;
+    this->loaded = true;
 };
 
 template <typename Scalar>
@@ -262,6 +281,11 @@ void BVH<Scalar>::Intersect( Ray<Scalar>& ray ) {
         // Rotate the ray into the BVH frame:
         Ray<Scalar> backup_ray = ray;
         inverse_transform(ray);
+
+        // Load if needed:
+        if (!loaded){
+            this->parent->load();
+        }
 
         BVHNode<Scalar>& node = bvhNode[0];
         InnerIntersect( ray, node.leftFirst );

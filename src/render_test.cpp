@@ -45,8 +45,12 @@ int main(){
     lights[0]->set_position(0,3,1.5);
 
     std::vector<Geometry<Scalar>*> geometries;
-    
+
+    auto start = std::chrono::high_resolution_clock::now();
     geometries.push_back(new Geometry<Scalar>("../../BENNU/binary_global_set/l_00050mm_alt_dtm_3041s08903_v021.bin", "binary"));
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+    std::cout << "    Header read in " << duration.count() << " milliseconds\n";
 
     // Create the scene:
     auto scene = Scene<Scalar>(geometries);
