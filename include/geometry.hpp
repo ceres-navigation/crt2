@@ -28,6 +28,8 @@ class Geometry : public RigidBody<Scalar>{
         std::string magic = "CRTOBJ";
         int magic_length = 6;
 
+        std::string binary_file_path;
+
         BVH<Scalar>* bvh = nullptr;
 
         Material<Scalar>* material = nullptr;
@@ -66,6 +68,7 @@ class Geometry : public RigidBody<Scalar>{
         // Read from file methods:
         void read_obj(const char* file_path);
         void read_binary(const char* file_path);
+        void read_binary_header(const char* file_path);
 };
 
 #endif

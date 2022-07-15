@@ -25,121 +25,7 @@
 #include "materials/material.hpp"
 #include "materials/lambertian.hpp"
 
-template <typename Scalar>
-bool using_doubles();
-
-template <>
-bool using_doubles<float>() {return false;};
-
-template <>
-bool using_doubles<double>() {return true;};
-
-template <typename Scalar>
-void read_file(FILE* file, bool is_double, AABB<Scalar> &bounds, uint32_t t_compressed_size, uint32_t num_triangles, Scalar t_array[][9]);
-
-template <>
-void read_file<float>(FILE* file, bool is_double, AABB<float> &bounds, uint32_t t_compressed_size, uint32_t num_triangles, float t_array[][9]){
-    size_t fread_ret;
-    auto t_compressed = new uint8_t[t_compressed_size];
-    if (is_double){
-        // Read the bounding box:
-        double val;
-        for (int i = 0; i < 3; i++){
-            fread_ret = fread(&val, sizeof(double),  1, file);
-            if (fread_ret != 1){std::cout<<"failed reading bounds.bmin["<<i<<"]\n";exit(2);};
-            bounds.bmin[i] = (float) val;
-
-            fread_ret = fread(&val, sizeof(double),  1, file);
-            if (fread_ret != 1){std::cout<<"failed reading bounds.bmax["<<i<<"]\n";exit(2);};
-            bounds.bmax[i] = (float) val;
-        }
-
-        // Decompress triangles:
-        fread_ret = fread(t_compressed, sizeof(uint8_t), t_compressed_size, file);
-        // if (fread_ret){ std::cout << fread_ret <<"\n";};
-        auto t_array2 = new double[num_triangles][9];
-        auto t_size = ZSTD_decompress(t_array2, num_triangles*9*sizeof(double), t_compressed, t_compressed_size);
-        if (ZSTD_isError(t_size)) {
-            std::cerr << t_compressed_size << " " << ZSTD_getErrorName(t_size) << std::endl;
-        }
-        for (uint32_t i = 0; i < num_triangles; i++){
-            for (int j = 0; j < 9; j++){
-                t_array[i][j] = (float) t_array2[i][j];
-            }
-        }
-        delete [] t_array2;
-    } else {
-        // Read the bounding box:
-        for (int i = 0; i < 3; i++){
-            fread_ret = fread(&bounds.bmin[i], sizeof(float),  1, file);
-            if (fread_ret != 1){std::cout<<"failed reading bounds.bmin["<<i<<"]\n";exit(2);};
-
-            fread_ret = fread(&bounds.bmax[i], sizeof(float),  1, file);
-            if (fread_ret != 1){std::cout<<"failed reading bounds.bmax["<<i<<"]\n";exit(2);};
-        }
-
-        // Decompress triangles:
-        fread_ret = fread(t_compressed, sizeof(uint8_t), t_compressed_size, file);
-        // if (fread_ret){ std::cout << fread_ret <<"\n";};
-        auto t_size = ZSTD_decompress(t_array, num_triangles*9*sizeof(float), t_compressed, t_compressed_size);
-        if (ZSTD_isError(t_size)) {
-            std::cerr << t_compressed_size << " " << ZSTD_getErrorName(t_size) << std::endl;
-        }
-    }
-    delete [] t_compressed;
-}
-
-template <>
-void read_file<double>(FILE* file, bool is_double, AABB<double> &bounds, uint32_t t_compressed_size, uint32_t num_triangles, double t_array[][9]){
-    size_t fread_ret;
-    auto t_compressed = new uint8_t[t_compressed_size];
-    if (is_double){
-        // Read the bounding box:
-        for (int i = 0; i < 3; i++){
-            fread_ret = fread(&bounds.bmin[i], sizeof(double), 1, file);
-            if (fread_ret != 1){std::cout<<"failed reading bounds.bmin["<<i<<"]\n";exit(2);};
-
-            fread_ret = fread(&bounds.bmax[i], sizeof(double), 1, file);
-            if (fread_ret != 1){std::cout<<"failed reading bounds.bmax["<<i<<"]\n";exit(2);};
-        }
-
-        // Decompress triangles:
-        fread_ret = fread(t_compressed, sizeof(uint8_t), t_compressed_size, file);
-        // if (fread_ret){ std::cout << fread_ret <<"\n";};
-        auto t_size = ZSTD_decompress(t_array, num_triangles*9*sizeof(double), t_compressed, t_compressed_size);
-        if (ZSTD_isError(t_size)) {
-            std::cerr << t_compressed_size << " " << ZSTD_getErrorName(t_size) << std::endl;
-        }
-    } else {
-        // Read the bounding box:
-        float val;
-        for (int i = 0; i < 3; i++){
-            fread_ret = fread(&val, sizeof(float),  1, file);
-            if (fread_ret != 1){std::cout<<"failed reading bounds.bmin["<<i<<"]\n";exit(2);};
-            bounds.bmin[i] = (float) val;
-
-            fread_ret = fread(&val, sizeof(float),  1, file);
-            if (fread_ret != 1){std::cout<<"failed reading bounds.bmax["<<i<<"]\n";exit(2);};
-            bounds.bmax[i] = (float) val;
-        }
-
-        // Decompress triangles:
-        fread_ret = fread(t_compressed, sizeof(uint8_t), t_compressed_size, file);
-        // if (fread_ret){ std::cout << fread_ret <<"\n";};
-        auto t_array2 = new float[num_triangles][9];
-        auto t_size = ZSTD_decompress(t_array2, num_triangles*9*sizeof(float), t_compressed, t_compressed_size);
-        if (ZSTD_isError(t_size)) {
-            std::cerr << t_compressed_size << " " << ZSTD_getErrorName(t_size) << std::endl;
-        }
-        for (uint32_t i = 0; i < num_triangles; i++){
-            for (int j = 0; j < 9; j++){
-                t_array[i][j] = (double) t_array2[i][j];
-            }
-        }
-        delete [] t_array2;
-    }
-    delete [] t_compressed;
-}
+#include "binary_file.hpp"
 
 template <typename Scalar>
 Geometry<Scalar>::Geometry(const char* file_path, std::string file_type){
@@ -344,12 +230,41 @@ void Geometry<Scalar>::read_obj(const char* file_path){
 };
 
 template <typename Scalar>
-void Geometry<Scalar>::read_binary(const char* file_path){
-    std::vector<Vector3<Scalar>> vertices;
-    std::vector<std::vector<uint32_t>> faces;
-    std::vector<Vector3<Scalar>> normals;
-    std::vector<Vector2<Scalar>> texture_coordinates;
+void Geometry<Scalar>::read_binary_header(const char* file_path){
+    char magic_return[magic_length];
+    uint32_t t_compressed_size;
+    
+    // Read the file:
+    FILE* file = fopen(file_path, "rb");
 
+    // Declare AABB:
+    AABB<Scalar> bounds;
+
+    // Determine if using doubles:
+    bool is_double;
+
+    // Verify magic keyword:
+    size_t fread_ret;
+    fread_ret = fread(&magic_return, sizeof(char), 6, file);
+    if (fread_ret != 6){std::cout<<"failed reading magic phrase\n";  exit(2);};
+    for (int i = 0; i < magic_length; i++){
+        assert(magic_return[i] == magic[i]);
+    }
+
+    fread_ret = fread(&t_compressed_size, sizeof(uint32_t), 1, file);
+    if (fread_ret != 1){std::cout<<"failed reading t_compressed\n";  exit(2);};
+    fread_ret = fread(&num_triangles, sizeof(uint32_t), 1, file);
+    if (fread_ret != 1){std::cout<<"failed reading num_triangles\n"; exit(2);};
+    fread_ret = fread(&is_double, sizeof(bool), 1, file);
+    if (fread_ret != 1){std::cout<<"failed reading is_double\n"; exit(2);};
+
+    read_bounds<Scalar>(file, is_double, bounds);
+
+    fclose(file);
+}
+
+template <typename Scalar>
+void Geometry<Scalar>::read_binary(const char* file_path){
     char magic_return[magic_length];
     uint32_t t_compressed_size;
     
@@ -379,7 +294,9 @@ void Geometry<Scalar>::read_binary(const char* file_path){
 
     auto t_array = new Scalar[num_triangles][9];
 
-    read_file<Scalar>(file, is_double, bounds, t_compressed_size, num_triangles, t_array);
+    read_bounds<Scalar>(file, is_double, bounds);
+
+    read_data<Scalar>(file, is_double, t_compressed_size, num_triangles, t_array);
 
     fclose(file);
 

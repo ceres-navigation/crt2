@@ -46,10 +46,6 @@ int main(){
 
     std::vector<Geometry<Scalar>*> geometries;
     
-    // geometries.push_back(new Geometry<Scalar>("../suzanne.obj", "obj"));
-    // geometries[0]->set_position(Vector3<Scalar>(1,0,0));
-    // geometries[0]->set_rotation(ZXY_euler<Scalar>(11,83,22));
-    // geometries.push_back(new Geometry<Scalar>("../../BENNU/global_set_a/l_00050mm_alt_dtm_3041s08903_v021.obj", "obj"));
     geometries.push_back(new Geometry<Scalar>("../../BENNU/binary_global_set/l_00050mm_alt_dtm_3041s08903_v021.bin", "binary"));
 
     // Create the scene:

@@ -6,6 +6,7 @@ add_library(
     
     scene.cpp
     geometry.cpp
+    binary_file.cpp
 
     acceleration/bvh.cpp
 
