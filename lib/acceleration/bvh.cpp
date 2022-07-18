@@ -299,9 +299,11 @@ void BVH<Scalar>::Intersect( Ray<Scalar>& ray, uint tile_number) {
         inverse_transform(ray);
 
         // Load if needed:
-        mutex_t::scoped_lock scoped_lock(init_lock);
         if (!loaded){
-            this->parent->load(tile_number);
+            mutex_t::scoped_lock scoped_lock(init_lock);
+            if (!loaded){
+                this->parent->load(tile_number);
+            }
         }
         this->parent->last_seen_tile_number = tile_number;
 

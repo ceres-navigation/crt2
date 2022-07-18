@@ -163,13 +163,13 @@ template<typename Scalar>
 std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<Light<Scalar>*> lights){
 
     // THINGS TO MOVE OUTSIDE OF FUNCTION:
-    uint num_bounces = 1;
-    size_t tile_size = 64;
+    uint num_bounces = 0;
+    size_t tile_size = 20;
     uint min_samples = 20;
     uint max_samples = 100;
     Scalar noise_threshold = 0.001;
 	bool print_statements = true;
-    uint max_missed_tiles = 20;
+    uint max_missed_tiles = 2;
 
     if (print_statements){
         std::cout << "Rendering...\n";
@@ -212,11 +212,11 @@ std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<L
             }
 
             // Loop over pixels in current tile:
-            // tbb::parallel_for( tbb::blocked_range2d<size_t>(0, tile_height, 0, tile_width), [=, &camera, &distr, &eng, &lights, &pixels](const tbb::blocked_range2d<size_t>& r) {
-            // for (size_t x = r.cols().begin(), x_end=r.cols().end(); x<x_end; x++){
-            //     for (size_t y = r.rows().begin(), y_end=r.rows().end(); y<y_end; y++){
-            for (size_t x = 0; x < tile_width; x++){
-                for (size_t y = 0; y < tile_height; y++){
+            tbb::parallel_for( tbb::blocked_range2d<size_t>(0, tile_height, 0, tile_width), [=, &camera, &distr, &eng, &lights, &pixels](const tbb::blocked_range2d<size_t>& r) {
+            for (size_t x = r.cols().begin(), x_end=r.cols().end(); x<x_end; x++){
+                for (size_t y = r.rows().begin(), y_end=r.rows().end(); y<y_end; y++){
+            // for (size_t x = 0; x < tile_width; x++){
+            //     for (size_t y = 0; y < tile_height; y++){
                     size_t index = 4 * (width * (v+y) + (u+x));
                     SpectralRadiance<Scalar> pixel_radiance(0);
 
@@ -256,7 +256,7 @@ std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<L
                     pixels[index + 3] = 1;
                 }
             }
-            // }); // UNCOMMENT THIS OUT FOR TBB
+            }); // UNCOMMENT THIS OUT FOR TBB
 
             // Remove unecessary tiles:
             unload(tile_number, max_missed_tiles);
