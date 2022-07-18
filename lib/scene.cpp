@@ -17,12 +17,12 @@
 
 #include "path_tracing/backward.hpp"
 
-// #include <oneapi/tbb.h>
-// #include <oneapi/tbb/mutex.h>
-// #include <oneapi/tbb/rw_mutex.h>
-// typedef tbb::mutex mutex_t;
-// typedef tbb::rw_mutex rw_mutex_t;
-// #include <tbb/parallel_for.h>
+#include <oneapi/tbb.h>
+#include <oneapi/tbb/mutex.h>
+#include <oneapi/tbb/rw_mutex.h>
+typedef tbb::mutex mutex_t;
+typedef tbb::rw_mutex rw_mutex_t;
+#include <tbb/parallel_for.h>
 
 template <typename Scalar>
 Scene<Scalar>::Scene( std::vector<Geometry<Scalar>*> geometry_list) {
@@ -108,7 +108,11 @@ void Scene<Scalar>::Intersect( Ray<Scalar>& ray ) {
 	while (1) {
         if (node->isLeaf()) {
 			blas[node->blas_id]->Intersect( ray );
-			if (stackPtr == 0) break; else node = stack[--stackPtr];
+			if (stackPtr == 0) {
+                break; 
+            } else {
+                node = stack[--stackPtr];
+            }
 			continue;
 		}
 		TLASNode<Scalar>* child1 = &tlasNode[node->leftRight & 0xffff];
@@ -117,16 +121,25 @@ void Scene<Scalar>::Intersect( Ray<Scalar>& ray ) {
 		Scalar dist1 = intersect_aabb( ray, child1->aabbMin, child1->aabbMax );
 		Scalar dist2 = intersect_aabb( ray, child2->aabbMin, child2->aabbMax );
 
+        // Swap order of traversal if child2 is closer:
 		if (dist1 > dist2) { 
             std::swap( dist1, dist2 ); 
             std::swap( child1, child2 );
         }
+
+        // If the closest one is still infinite, skip:
 		if (dist1 == std::numeric_limits<Scalar>::max()) {
-			if (stackPtr == 0) break; else node = stack[--stackPtr];
+			if (stackPtr == 0){
+                break;
+            } else {
+                node = stack[--stackPtr];
+            }
 		}
 		else {
 			node = child1;
-			if (dist2 != std::numeric_limits<Scalar>::max()) stack[stackPtr++] = child2;
+			if (dist2 != std::numeric_limits<Scalar>::max()){
+                stack[stackPtr++] = child2;
+            }
 		}
 	}
 };
@@ -136,9 +149,9 @@ std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<L
 
     // THINGS TO MOVE OUTSIDE OF FUNCTION:
     uint num_bounces = 0;
-    size_t tile_size = 20;
-    uint min_samples = 10;
-    uint max_samples = 20;
+    size_t tile_size = 64;
+    uint min_samples = 0;
+    uint max_samples = 1;
     Scalar noise_threshold = 0.1;
 	bool print_statements = true;
 
@@ -163,6 +176,7 @@ std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<L
     Scalar radiance_to_pixel = (camera.sensor->size[0]/width)*(camera.sensor->size[1]/height);
 
     // Loop over tiles:
+    int tile_number = 0;
     for( size_t u = 0; u < width; u+=tile_size) {
         for (size_t v = 0; v < height; v+=tile_size){
 
@@ -177,11 +191,11 @@ std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<L
             }
 
             // Loop over pixels in current tile:
-            // tbb::parallel_for( tbb::blocked_range2d<size_t>(0, tile_width, 0, tile_height), [=](const tbb::blocked_range2d<size_t>& r) {
-            // for (size_t x = r.cols().begin(), x_end=r.cols().end(); x<x_end; x++){
-            //     for (size_t y = r.rows().begin(), y_end=r.rows().end(); y<y_end; y++){
-            for (size_t x = 0; x < tile_width; x++){
-                for (size_t y = 0; y < tile_height; y++){
+            tbb::parallel_for( tbb::blocked_range2d<size_t>(0, tile_width, 0, tile_height), [=](const tbb::blocked_range2d<size_t>& r) {
+            for (size_t x = r.cols().begin(), x_end=r.cols().end(); x<x_end; x++){
+                for (size_t y = r.rows().begin(), y_end=r.rows().end(); y<y_end; y++){
+            // for (size_t x = 0; x < tile_width; x++){
+            //     for (size_t y = 0; y < tile_height; y++){
 
                     size_t index = 4 * (width * (v+y) + (u+x));
                     SpectralRadiance<Scalar> pixel_radiance(0);
@@ -222,7 +236,10 @@ std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<L
                     pixels[index + 3] = 1;
                 }
             }
-            // }); // UNCOMMENT THIS OUT FOR TBB
+            }); // UNCOMMENT THIS OUT FOR TBB
+
+            std::cout << "Tile " << tile_number << " rendered...\n";
+            tile_number++;
         }
     }
 

@@ -276,8 +276,13 @@ void BVH<Scalar>::InnerIntersect( Ray<Scalar>& ray, const uint nodeIdx ) {
 
 template <typename Scalar>
 void BVH<Scalar>::Intersect( Ray<Scalar>& ray ) {
+    //TODO REPLACE THIS WITH ORDERED TRAVERSAL:
+
     // Test the ray against world space pose of the bounding box:
-    if (intersect_aabb( ray, bounds_world.bmin, bounds_world.bmax ) != std::numeric_limits<Scalar>::max()){
+    Scalar dist = intersect_aabb( ray, bounds_world.bmin, bounds_world.bmax );
+
+    // Only proceed with if the ray has not already hit a primitive that is closer:
+    if (dist < ray.hit.t){
         // Rotate the ray into the BVH frame:
         Ray<Scalar> backup_ray = ray;
         inverse_transform(ray);
