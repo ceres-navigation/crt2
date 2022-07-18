@@ -50,10 +50,10 @@ int main(){
     auto start = std::chrono::high_resolution_clock::now();
     
     // geometries.push_back(new Geometry<Scalar>("../../BENNU/binary_global_set/l_00050mm_alt_dtm_3041s08903_v021.bin", "binary"));
-    geometries.push_back(new Geometry<Scalar>("../../BENNU/binary_global_set/l_00050mm_alt_dtm_1146s08248_v021.bin", "binary"));
-    // for (auto &p : std::filesystem::recursive_directory_iterator("../../BENNU/binary_global_set/")){
-    //     geometries.push_back(new Geometry<Scalar>(p.path().c_str(),"binary"));
-    // }
+    // geometries.push_back(new Geometry<Scalar>("../../BENNU/binary_global_set/l_00050mm_alt_dtm_1146s08248_v021.bin", "binary"));
+    for (auto &p : std::filesystem::recursive_directory_iterator("../../BENNU/binary_global_set/")){
+        geometries.push_back(new Geometry<Scalar>(p.path().c_str(),"binary"));
+    }
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
     std::cout << "    Header read in " << duration.count() << " milliseconds\n";

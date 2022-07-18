@@ -24,6 +24,9 @@ typedef tbb::mutex mutex_t;
 typedef tbb::rw_mutex rw_mutex_t;
 #include <tbb/parallel_for.h>
 
+// TEMPORARY REMOVE THIS:
+#include <tbb/global_control.h>
+
 template <typename Scalar>
 Scene<Scalar>::Scene( std::vector<Geometry<Scalar>*> geometry_list) {
     // Store all BLAS:
@@ -169,11 +172,16 @@ std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<L
     // Initialize the image:
     size_t width  = (size_t) floor(camera.sensor->get_resolution_h());
     size_t height = (size_t) floor(camera.sensor->get_resolution_v());
-    auto pixels = std::make_unique<float[]>(4 * width * height);
+
+    // auto pixels = std::make_unique<float[]>(4 * width * height);
+    float pixels[4 * width * height] = {0};
 
     // Use sensor sensitivity and pixel size:
     // Scalar radiance_to_pixel = camera.sensor->radiance_to_pixel();
-    Scalar radiance_to_pixel = (camera.sensor->size[0]/width)*(camera.sensor->size[1]/height);
+    const Scalar radiance_to_pixel = (camera.sensor->size[0]/width)*(camera.sensor->size[1]/height);
+
+    //TEMPORARY REMOVE THIS!
+    // tbb::global_control c(tbb::global_control::max_allowed_parallelism, 1);
 
     // Loop over tiles:
     int tile_number = 0;
@@ -191,12 +199,11 @@ std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<L
             }
 
             // Loop over pixels in current tile:
-            tbb::parallel_for( tbb::blocked_range2d<size_t>(0, tile_width, 0, tile_height), [=](const tbb::blocked_range2d<size_t>& r) {
+            tbb::parallel_for( tbb::blocked_range2d<size_t>(0, tile_height, 0, tile_width), [=, &camera, &distr, &eng, &lights, &pixels](const tbb::blocked_range2d<size_t>& r) {
             for (size_t x = r.cols().begin(), x_end=r.cols().end(); x<x_end; x++){
                 for (size_t y = r.rows().begin(), y_end=r.rows().end(); y<y_end; y++){
             // for (size_t x = 0; x < tile_width; x++){
             //     for (size_t y = 0; y < tile_height; y++){
-
                     size_t index = 4 * (width * (v+y) + (u+x));
                     SpectralRadiance<Scalar> pixel_radiance(0);
 
@@ -230,6 +237,9 @@ std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<L
                     }
 
                     // Store the pixel intensity:
+                    if (index >= 4*width*height){
+                        std::cout << "    index >= 1400000 (ERROR)\n";
+                    }
                     pixels[index    ] = pixel_radiance[0]*radiance_to_pixel;
                     pixels[index + 1] = pixel_radiance[1]*radiance_to_pixel;
                     pixels[index + 2] = pixel_radiance[2]*radiance_to_pixel;
@@ -237,7 +247,6 @@ std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<L
                 }
             }
             }); // UNCOMMENT THIS OUT FOR TBB
-
             std::cout << "Tile " << tile_number << " rendered...\n";
             tile_number++;
         }

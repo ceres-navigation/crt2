@@ -10,6 +10,8 @@
 #include "utils/vector.hpp"
 #include "utils/rotation.hpp"
 
+#include "utils/parallel.hpp"
+
 // Forward declaration of Geometry class:
 template <typename Scalar>
 class Geometry;
@@ -84,6 +86,9 @@ class BVH{
 
         void inverse_transform(Ray<Scalar> &ray);
         void inverse_transform(Vector3<Scalar> &vector);
+
+    private:
+        mutex_t init_lock;
 };
 
 #endif

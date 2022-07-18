@@ -8,6 +8,8 @@
 
 #include "geometry.hpp"
 
+#include "utils/parallel.hpp"
+
 template <typename Scalar>
 BVH<Scalar>::BVH(){
 };
@@ -288,6 +290,7 @@ void BVH<Scalar>::Intersect( Ray<Scalar>& ray ) {
         inverse_transform(ray);
 
         // Load if needed:
+        mutex_t::scoped_lock scoped_lock(init_lock);
         if (!loaded){
             this->parent->load();
         }
