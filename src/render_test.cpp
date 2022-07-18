@@ -36,24 +36,25 @@ int main(){
 
     // Define camera:
     SimpleCamera<Scalar> camera(50, sensor, false);
-    camera.set_position(0.01,0.3,-0.11);
+    camera.set_position(0,10,0);
     Rotation<Scalar> rotation = XYZ_euler<Scalar>(90,0,180);
     camera.set_rotation(rotation);
 
     // Define a simple light:
     std::vector<Light<Scalar>*> lights;
-    lights.push_back(new PointLight<Scalar>(500));
-    lights[0]->set_position(0,3,1.5);
+    lights.push_back(new PointLight<Scalar>(5000));
+    lights[0]->set_position(10,0,0);
 
     std::vector<Geometry<Scalar>*> geometries;
 
     auto start = std::chrono::high_resolution_clock::now();
     
+    geometries.push_back(new Geometry<Scalar>("67p.bin","binary"));
     // geometries.push_back(new Geometry<Scalar>("../../BENNU/binary_global_set/l_00050mm_alt_dtm_3041s08903_v021.bin", "binary"));
     // geometries.push_back(new Geometry<Scalar>("../../BENNU/binary_global_set/l_00050mm_alt_dtm_1146s08248_v021.bin", "binary"));
-    for (auto &p : std::filesystem::recursive_directory_iterator("../../BENNU/binary_global_set/")){
-        geometries.push_back(new Geometry<Scalar>(p.path().c_str(),"binary"));
-    }
+    // for (auto &p : std::filesystem::recursive_directory_iterator("../../BENNU/binary_global_set/")){
+    //     geometries.push_back(new Geometry<Scalar>(p.path().c_str(),"binary"));
+    // }
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
     std::cout << "    Header read in " << duration.count() << " milliseconds\n";

@@ -70,6 +70,7 @@ class BVH{
         void set_parent(Geometry<Scalar>* parent);
 
         void init(Triangle<Scalar>* triangles, uint num_triangles);
+        void deinit();
 
         // Functions for Binned BVH building:
         Scalar FindBestSplitPlane( BVHNode<Scalar>& node, int& axis, Scalar& splitPos);
@@ -79,7 +80,7 @@ class BVH{
 
         // Function for ray traversal:
         void InnerIntersect( Ray<Scalar>& ray, const uint nodeIdx);
-        void Intersect( Ray<Scalar>& ray);
+        void Intersect( Ray<Scalar>& ray, uint tile_number);
 
         void transform(Ray<Scalar> &ray);
         void transform(Vector3<Scalar> &vector);

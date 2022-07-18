@@ -9,12 +9,13 @@
 #include <math.h>
 
 template<typename Scalar>
-void backward_trace(Scene<Scalar>* scene, Ray<Scalar>& ray, std::vector<Light<Scalar>*> &lights, uint num_bounces, SpectralRadiance<Scalar> &path_radiance){
+void backward_trace(Scene<Scalar>* scene, Ray<Scalar>& ray, std::vector<Light<Scalar>*> &lights, uint num_bounces,
+                    SpectralRadiance<Scalar> &path_radiance, uint tile_number){
     
     Vector3<Scalar> weight(2*M_PI);
     for (uint bounce = 0; bounce < num_bounces+1; bounce++){
         // Intersect ray with scene:
-        scene->Intersect( ray );
+        scene->Intersect( ray, tile_number);
 
         // Skip illumination computation if no hit:
         if (ray.hit.t == std::numeric_limits<Scalar>::max()) {
@@ -48,7 +49,7 @@ void backward_trace(Scene<Scalar>* scene, Ray<Scalar>& ray, std::vector<Light<Sc
             intersect_point = intersect_point + normal* (Scalar) 0.0001;
             Ray<Scalar> light_ray = light->sample_ray(intersect_point);
             Scalar light_distance = light_ray.t;
-            scene->Intersect( light_ray );
+            scene->Intersect( light_ray, tile_number);
 
             // If ray is not obstructed, evaluate the illumination model:
             if (light_ray.hit.t > light_distance){// || light_ray.hit.t < tol) {
@@ -70,5 +71,7 @@ void backward_trace(Scene<Scalar>* scene, Ray<Scalar>& ray, std::vector<Light<Sc
 };
 
 // Explicitly Instantiate floats and doubles:
-template void backward_trace<float>(Scene<float>* scene, Ray<float>& ray, std::vector<Light<float>*> &lights, uint num_bounces, Vector3<float> &pixel_radiance);
-template void backward_trace<double>(Scene<double>* scene, Ray<double>& ray, std::vector<Light<double>*> &lights, uint num_bounces, Vector3<double> &pixel_radiance);
+template void backward_trace<float>(Scene<float>* scene, Ray<float>& ray, std::vector<Light<float>*> &lights, uint num_bounces, 
+                                    SpectralRadiance<float> &pixel_radiance, uint tile_number);
+template void backward_trace<double>(Scene<double>* scene, Ray<double>& ray, std::vector<Light<double>*> &lights, uint num_bounces,
+                                     SpectralRadiance<double> &pixel_radiance, uint tile_number);

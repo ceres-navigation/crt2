@@ -38,6 +38,9 @@ Scene<Scalar>::Scene( std::vector<Geometry<Scalar>*> geometry_list) {
     // copy a pointer to the array of bottom level accstructs
     blasCount = geometry_list.size();
 
+    // Store the vector of geometries:
+    this->geometry_list = geometry_list;
+
     // allocate Scene nodes
     tlasNode = new TLASNode<Scalar>[2*geometry_list.size()];
     nodesUsed = 0;
@@ -105,12 +108,12 @@ void Scene<Scalar>::Build() {
 }
 
 template <typename Scalar>
-void Scene<Scalar>::Intersect( Ray<Scalar>& ray ) {
+void Scene<Scalar>::Intersect( Ray<Scalar>& ray, uint tile_number) {
 	TLASNode<Scalar>* node = &tlasNode[0], * stack[64];
 	uint stackPtr = 0;
 	while (1) {
         if (node->isLeaf()) {
-			blas[node->blas_id]->Intersect( ray );
+			blas[node->blas_id]->Intersect( ray, tile_number);
 			if (stackPtr == 0) {
                 break; 
             } else {
@@ -147,16 +150,26 @@ void Scene<Scalar>::Intersect( Ray<Scalar>& ray ) {
 	}
 };
 
+template <typename Scalar>
+void Scene<Scalar>::unload(uint tile_number, uint max_missed_tiles){
+    for (uint i = 0; i < geometry_list.size(); i++){
+        if (geometry_list[i]->loaded){
+            geometry_list[i]->unload(tile_number, max_missed_tiles);
+        }
+    }
+};
+
 template<typename Scalar>
 std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<Light<Scalar>*> lights){
 
     // THINGS TO MOVE OUTSIDE OF FUNCTION:
-    uint num_bounces = 0;
+    uint num_bounces = 1;
     size_t tile_size = 64;
-    uint min_samples = 0;
-    uint max_samples = 1;
-    Scalar noise_threshold = 0.1;
+    uint min_samples = 20;
+    uint max_samples = 100;
+    Scalar noise_threshold = 0.001;
 	bool print_statements = true;
+    uint max_missed_tiles = 20;
 
     if (print_statements){
         std::cout << "Rendering...\n";
@@ -184,7 +197,7 @@ std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<L
     // tbb::global_control c(tbb::global_control::max_allowed_parallelism, 1);
 
     // Loop over tiles:
-    int tile_number = 0;
+    uint tile_number = 0;
     for( size_t u = 0; u < width; u+=tile_size) {
         for (size_t v = 0; v < height; v+=tile_size){
 
@@ -199,11 +212,11 @@ std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<L
             }
 
             // Loop over pixels in current tile:
-            tbb::parallel_for( tbb::blocked_range2d<size_t>(0, tile_height, 0, tile_width), [=, &camera, &distr, &eng, &lights, &pixels](const tbb::blocked_range2d<size_t>& r) {
-            for (size_t x = r.cols().begin(), x_end=r.cols().end(); x<x_end; x++){
-                for (size_t y = r.rows().begin(), y_end=r.rows().end(); y<y_end; y++){
-            // for (size_t x = 0; x < tile_width; x++){
-            //     for (size_t y = 0; y < tile_height; y++){
+            // tbb::parallel_for( tbb::blocked_range2d<size_t>(0, tile_height, 0, tile_width), [=, &camera, &distr, &eng, &lights, &pixels](const tbb::blocked_range2d<size_t>& r) {
+            // for (size_t x = r.cols().begin(), x_end=r.cols().end(); x<x_end; x++){
+            //     for (size_t y = r.rows().begin(), y_end=r.rows().end(); y<y_end; y++){
+            for (size_t x = 0; x < tile_width; x++){
+                for (size_t y = 0; y < tile_height; y++){
                     size_t index = 4 * (width * (v+y) + (u+x));
                     SpectralRadiance<Scalar> pixel_radiance(0);
 
@@ -223,7 +236,7 @@ std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<L
 
                         // Evaluate path tracing:
                         Vector3<Scalar> path_radiance(0);
-                        backward_trace<Scalar>(this, ray, lights, num_bounces, path_radiance);
+                        backward_trace<Scalar>(this, ray, lights, num_bounces, path_radiance, tile_number);
 
                         // Run adaptive sampling:
                         SpectralRadiance<Scalar> rad_contrib = (path_radiance - pixel_radiance)*((Scalar) 1/sample);
@@ -237,16 +250,17 @@ std::vector<uint8_t> Scene<Scalar>::render(Camera<Scalar>& camera, std::vector<L
                     }
 
                     // Store the pixel intensity:
-                    if (index >= 4*width*height){
-                        std::cout << "    index >= 1400000 (ERROR)\n";
-                    }
                     pixels[index    ] = pixel_radiance[0]*radiance_to_pixel;
                     pixels[index + 1] = pixel_radiance[1]*radiance_to_pixel;
                     pixels[index + 2] = pixel_radiance[2]*radiance_to_pixel;
                     pixels[index + 3] = 1;
                 }
             }
-            }); // UNCOMMENT THIS OUT FOR TBB
+            // }); // UNCOMMENT THIS OUT FOR TBB
+
+            // Remove unecessary tiles:
+            unload(tile_number, max_missed_tiles);
+
             std::cout << "Tile " << tile_number << " rendered...\n";
             tile_number++;
         }

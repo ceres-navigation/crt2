@@ -55,8 +55,8 @@ Geometry<Scalar>::~Geometry(){
 };
 
 template <typename Scalar>
-void Geometry<Scalar>::intersect(Ray<Scalar> &ray){
-    this->bvh->Intersect(ray);
+void Geometry<Scalar>::intersect(Ray<Scalar> &ray, uint tile_number){
+    this->bvh->Intersect(ray, tile_number);
 }
 
 template <typename Scalar>
@@ -132,11 +132,24 @@ void Geometry<Scalar>::bvh_aabb_only(){
 };
 
 template <typename Scalar>
-void Geometry<Scalar>::load(){
+void Geometry<Scalar>::load(uint tile_number){
     read_binary(binary_file_path.c_str());
     this->bvh->init(this->triangles, this->num_triangles);
     this->bvh->Build();
     this->bvh->UpdateBounds();
+    this->loaded = true;
+};
+
+template <typename Scalar>
+void Geometry<Scalar>::unload(uint tile_number, uint max_missed_tiles){
+    if (loaded && tile_number - last_seen_tile_number > max_missed_tiles){
+        this->bvh->deinit();
+        delete[] this->triangles;
+        delete[] this->triangle_data;
+        this->num_triangles = 0;
+        std::cout << "    Unloaded " << binary_file_path.c_str() <<"\n";
+        this->loaded = false;
+    }
 };
 
 template <typename Scalar>
@@ -280,7 +293,7 @@ void Geometry<Scalar>::read_binary_header(const char* file_path){
 template <typename Scalar>
 void Geometry<Scalar>::read_binary(const char* file_path){
 
-    std::cout << "Reading binary from: "<< file_path << "\n";
+    std::cout << "    Reading binary from: "<< file_path << "\n";
     char magic_return[magic_length];
     uint32_t t_compressed_size;
     

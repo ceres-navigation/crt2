@@ -32,8 +32,8 @@ BVH<Scalar>::BVH(Triangle<Scalar>* triangles, uint num_triangles) {
 
 template <typename Scalar>
 BVH<Scalar>::~BVH(){
-    delete this->bvhNode;
-    delete this->triIdx;
+    delete[] this->bvhNode;
+    delete[] this->triIdx;
 };
 
 template <typename Scalar>
@@ -45,6 +45,15 @@ void BVH<Scalar>::init(Triangle<Scalar>* triangles, uint num_triangles) {
     this->nodesUsed = 1;
     this->loaded = true;
 };
+
+template <typename Scalar>
+void BVH<Scalar>::deinit(){
+    delete[] this->bvhNode;
+    delete[] this->triIdx;
+    this->tri = nullptr;
+    this->N = 0;
+    this->loaded = false;
+}
 
 template <typename Scalar>
 void BVH<Scalar>::set_parent(Geometry<Scalar>* parent){
@@ -277,7 +286,7 @@ void BVH<Scalar>::InnerIntersect( Ray<Scalar>& ray, const uint nodeIdx ) {
 };
 
 template <typename Scalar>
-void BVH<Scalar>::Intersect( Ray<Scalar>& ray ) {
+void BVH<Scalar>::Intersect( Ray<Scalar>& ray, uint tile_number) {
     //TODO REPLACE THIS WITH ORDERED TRAVERSAL:
 
     // Test the ray against world space pose of the bounding box:
@@ -292,8 +301,9 @@ void BVH<Scalar>::Intersect( Ray<Scalar>& ray ) {
         // Load if needed:
         mutex_t::scoped_lock scoped_lock(init_lock);
         if (!loaded){
-            this->parent->load();
+            this->parent->load(tile_number);
         }
+        this->parent->last_seen_tile_number = tile_number;
 
         BVHNode<Scalar>& node = bvhNode[0];
         InnerIntersect( ray, node.leftFirst );

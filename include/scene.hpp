@@ -19,13 +19,15 @@ struct TLASNode {
 template <typename Scalar>
 class Scene {
     public:
-        Scene( std::vector<Geometry<Scalar>*> geometryList);
+        Scene( std::vector<Geometry<Scalar>*> geometry_list);
         void Build();
-        void Intersect( Ray<Scalar>& ray );
+        void Intersect( Ray<Scalar>& ray, uint tile_number);
+        void unload(uint tile_number, uint max_missed_tiles);
 
         std::vector<uint8_t> render(Camera<Scalar>& camera, std::vector<Light<Scalar>*> lights);
         
     private:
+        std::vector<Geometry<Scalar>*> geometry_list;
         uint FindBestMatch( uint* list, uint N, uint A );
         TLASNode<Scalar>* tlasNode = 0;
         BVH<Scalar>** blas = 0;

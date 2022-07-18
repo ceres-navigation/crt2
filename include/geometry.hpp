@@ -34,6 +34,9 @@ class Geometry : public RigidBody<Scalar>{
 
         Material<Scalar>* material = nullptr;
 
+        uint last_seen_tile_number;
+        bool loaded = false;
+
         // Triangle defintions:
         uint32_t num_triangles = 0;
         Triangle<Scalar> *triangles = nullptr;
@@ -46,7 +49,7 @@ class Geometry : public RigidBody<Scalar>{
 
         ~Geometry();
 
-        void intersect(Ray<Scalar> &ray);
+        void intersect(Ray<Scalar> &ray, uint tile_number);
 
         void write_binary(const char* file_path);
 
@@ -59,7 +62,8 @@ class Geometry : public RigidBody<Scalar>{
 
 
         // Lazy loading methods:
-        void load();
+        void load(uint tile_number);
+        void unload(uint tile_number, uint max_missed_tiles);
 
     private: 
         void build_bvh(int BINS=8);
